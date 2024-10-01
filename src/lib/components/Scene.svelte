@@ -1,62 +1,135 @@
 <script>
-  import { T, useThrelte } from '@threlte/core'
-  import {getModels} from './utils/api.js';
-  import { onMount } from 'svelte';
-  import { ContactShadows, Float, Grid, OrbitControls } from '@threlte/extras'
-  import Model from './models/Model.svelte';
-  export let selectedModelId = '52b3e0bcc90f4cba930b336dbdba63c0'; 
-  let modelUrl = '';
-  onMount(async () => {
-      if (selectedModelId) {
-        modelUrl = await getModels(selectedModelId);
-      }
-    });
+	import { Pane, Slider, Folder } from 'svelte-tweakpane-ui';
+	import { getModels } from './utils/api.js';
+	import { onMount, onDestroy } from 'svelte';
+	import { spring, tweened } from 'svelte/motion';
+	import { cubicOut } from 'svelte/easing';
+	import { useThrelteUserContext, T } from '@threlte/core';
+	import {
+		ContactShadows,
+		Float,
+		Grid,
+		Sky,
+		Stars,
+		interactivity,
+		OrbitControls,
+		PerfMonitor
+	} from '@threlte/extras';
+	import { modelValues, cameraValues, macbookValues } from './utils/stores.js';
+
+	import Macbook from './models/Macbook.svelte';
+	import Model from './models/Model.svelte';
+	import Room from './models/Room.svelte';
+	export let selectedModelId = null;
+
+	let cameraRef;
+	let modelUrl = '';
+	let modelScale;
+	let modelPosition;
+	let modelRotation;
+	let cameraPosition;
+	let cameraRotation;
+	let cameraFov;
+	let macbookPosition;
+	let macbookRotation;
+	interactivity();
+
+	const unsubMod = modelValues.subscribe(($modelValues) => {
+		modelScale = $modelValues.scale;
+		modelPosition = $modelValues.position;
+		modelRotation = $modelValues.rotation;
+	});
+	const unsubCam = cameraValues.subscribe(($cameraValues) => {
+		cameraPosition = $cameraValues.position;
+		cameraRotation = $cameraValues.rotation;
+		cameraFov = $cameraValues.fov;
+	});
+	const unsubMac = macbookValues.subscribe(($macbookValues) => {
+		macbookPosition = $macbookValues.position;
+		macbookRotation = $macbookValues.rotation;
+	});
+	$: {
+		modelValues.set({
+			modelScale,
+			modelPosition,
+			modelRotation
+		});
+	}
+
+	onMount(async () => {
+		if (selectedModelId) {
+			modelUrl = await getModels(selectedModelId);
+		}
+	});
+	onDestroy(() => {
+		unsubCam();
+		unsubMac();
+		unsubMod();
+	});
 </script>
 
+{#if modelUrl}
+	<Pane title="Model Controls" position="fixed">
+		<Slider bind:value={modelScale} min={0.001} max={1} step={0.001} label="Scale" />
+		<Folder title="Model Position">
+			<Slider bind:value={modelPosition[0]} min={-10} max={10} step={0.1} label="X" />
+			<Slider bind:value={modelPosition[1]} min={-10} max={10} step={0.1} label="Y" />
+			<Slider bind:value={modelPosition[2]} min={-10} max={10} step={0.1} label="Z" />
+		</Folder>
+		<Folder title="Model Rotation">
+			<Slider bind:value={modelRotation[0]} min={-Math.PI} max={Math.PI} step={0.1} label="X" />
+			<Slider bind:value={modelRotation[1]} min={-Math.PI} max={Math.PI} step={0.1} label="Y" />
+			<Slider bind:value={modelRotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
+		</Folder>
+	</Pane>
+{/if}
+<!-- <PerfMonitor anchorX={'left'} logsPerSecond={30} /> -->
 <T.PerspectiveCamera
-  makeDefault
-  position={[-10, 10, 10]}
-  fov={15}
+	on:create={({ ref }) => {
+		ref.lookAt(0, 1, 0);
+	}}
+	makeDefault
+	position={cameraPosition}
+	fov={cameraFov}
 >
-  <OrbitControls
-    autoRotate
-    enableZoom={false}
-    enableDamping
-    autoRotateSpeed={0.5}
-    target.y={1.5}
-  />
+	<OrbitControls rotateSpeed={0.3} enableZoom={false} enableDamping target.y={1.5} />
 </T.PerspectiveCamera>
 
-<T.DirectionalLight
-  intensity={0.8}
-  position.x={5}
-  position.y={10}
+<Stars />
+<Sky
+	setEnvironment
+	turbidity={10}
+	rayleigh={3}
+	azimuth={120}
+	elevation={0.25}
+	mieCoefficient={0.005}
 />
-<T.AmbientLight intensity={0.2} />
 
 <Grid
-  position.y={-0.001}
-  cellColor="#ffffff"
-  sectionColor="#ffffff"
-  sectionThickness={0}
-  fadeDistance={25}
-  cellSize={2}
+	position.y={-0.5}
+	cellColor="#ffffff"
+	sectionColor="#ffffff"
+	sectionThickness={0}
+	fadeDistance={25}
+	cellSize={2}
 />
 
-<ContactShadows
-  scale={10}
-  blur={2}
-  far={2.5}
-  opacity={0.5}
-/>
+<ContactShadows scale={10} blur={2} far={2.5} opacity={0.5} />
 
-<Float
-  floatIntensity={1}
-  floatingRange={[0, 1]}
->
-{#if modelUrl}
-<Model modelUrl={modelUrl} />
-{/if}
+<Room scale={0.5} rotation.y={-Math.PI / 2} />
+
+<Macbook position={[1.4, 1.22, 0.5]} scale={0.015} rotation={macbookRotation} />
+
+<Float floatIntensity={0.1} floatingRange={[0, 0.3]}>
+	{#if modelUrl}
+		<Model
+			scale={$modelValues.scale}
+			position={$modelValues.position}
+			rotation={$modelValues.rotation}
+			{modelUrl}
+		/>
+	{/if}
 </Float>
 
-
+<style>
+</style>
