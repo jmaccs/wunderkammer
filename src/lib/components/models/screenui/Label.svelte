@@ -1,22 +1,33 @@
-<script lang="ts">
-    import { Text } from '@threlte/extras'
-    import type { ColorRepresentation } from 'three'
-    import { useReflow } from '@threlte/flex'
-    import { forwardEventHandlers } from '@threlte/core'
-    export let text: string
-    export let color: ColorRepresentation = 'white'
-    export let z = 0
-    export let fontStyle = 'regular'
-    export let anchorX = '50%'
-    export let anchorY = '50%'
-    export let fontSize = 'm'
-    const fontSizes = {
-      xs: 4,
-      s: 6,
-      m: 8,
-      l: 10,
-      xl: 12
-    }
-    $: fontUrl = `/fonts/inter/inter-${fontStyle}.ttf`
-    const reflow = useReflow()
-  </script>
+<script>
+	import { Text } from '@threlte/extras';
+
+	import { useReflow } from '@threlte/flex';
+	import { forwardEventHandlers } from '@threlte/core';
+	export let text;
+	export let color = 'white';
+	export let z = 0;
+	export let fontStyle = 'regular';
+	export let anchorX = '50%';
+	export let anchorY = '50%';
+	export let fontSize = 'l';
+	const fontSizes = {
+		xs: 4,
+		s: 6,
+		m: 8,
+		l: 10,
+		xl: 12
+	};
+	$: fontUrl = `/fonts/Catrinity.otf`;
+	const reflow = useReflow();
+</script>
+
+<Text
+	font={fontUrl}
+	position.z={z}
+	{text}
+	{anchorX}
+	{anchorY}
+	fontSize={fontSizes[fontSize]}
+	{color}
+	on:sync={reflow}
+/>

@@ -11,7 +11,7 @@
     export let z = 0
     export let text = ''
     export let order= undefined
-  
+    
     const { hovering, onPointerEnter, onPointerLeave } = useCursor()
   </script>
   

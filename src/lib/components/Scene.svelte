@@ -1,28 +1,40 @@
 <script>
 	import { Pane, Slider, Folder } from 'svelte-tweakpane-ui';
 	import { getModels } from './utils/api.js';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { spring, tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	import { useThrelteUserContext, T } from '@threlte/core';
+	import * as THREE from 'three';
+	import { T, useThrelte, extend, useTask } from '@threlte/core';
+	import { scale, fly } from './utils/responsivityUtils.js';
 	import {
-		ContactShadows,
-		Float,
 		Grid,
 		Sky,
 		Stars,
 		interactivity,
 		OrbitControls,
-		PerfMonitor
+		createTransition,
+		useCursor
 	} from '@threlte/extras';
-	import { modelValues, cameraValues, macbookValues } from './utils/stores.js';
-
-	import Macbook from './models/Macbook.svelte';
+	import { DEG2RAD } from 'three/src/math/MathUtils.js';
+	import {
+		modelValues,
+		cameraValues,
+		macbookValues,
+		screenValue,
+		toggleScreen,
+		setCurrentPage
+	} from './utils/stores.js';
+	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
-	export let selectedModelId = null;
 
-	let cameraRef;
+	import ScreenUi from './models/screenui/ScreenUI.svelte';
+	import Keyboard from './models/Keyboard.svelte';
+	import LightSpeed from './models/screenui/LightSpeed.svelte';
+
+	export let selectedModelId = null;
+	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
 	let modelScale;
 	let modelPosition;
@@ -32,7 +44,15 @@
 	let cameraFov;
 	let macbookPosition;
 	let macbookRotation;
+	let macbookScale = spring(0.015);
+	let rotation;
+	let showWinamp = false;
+	let showUi = false;
+	let currentScreen;
 	interactivity();
+	extend({
+		OrbitControls
+	});
 
 	const unsubMod = modelValues.subscribe(($modelValues) => {
 		modelScale = $modelValues.scale;
@@ -48,6 +68,11 @@
 		macbookPosition = $macbookValues.position;
 		macbookRotation = $macbookValues.rotation;
 	});
+	const unsubScreen = screenValue.subscribe(($screenValue) => {
+		showUi = $screenValue.screenOpen;
+		// currentScreen = $screenValue.currentScreen;
+	});
+
 	$: {
 		modelValues.set({
 			modelScale,
@@ -56,6 +81,26 @@
 		});
 	}
 
+	async function handleOpenUi() {
+		await tick();
+		if (!showUi) {
+			toggleScreen(true);
+			setCurrentPage('menu');
+		}
+	}
+
+	// watch(winamp, (winampOpen) => {
+	// 	if (winampOpen === true) {
+	// 		showWinamp = true;
+	// 		console.log('winamp open', winampOpen);
+	// 	} else if (winampOpen === false) {
+	// 		showWinamp = false;
+	// 		console.log('winamp closed', winampOpen);
+	// 	}
+	// });
+	useTask((delta) => {
+		rotation += delta;
+	});
 	onMount(async () => {
 		if (selectedModelId) {
 			modelUrl = await getModels(selectedModelId);
@@ -65,10 +110,11 @@
 		unsubCam();
 		unsubMac();
 		unsubMod();
+		unsubScreen();
 	});
 </script>
 
-{#if modelUrl}
+<!-- {#if modelUrl}
 	<Pane title="Model Controls" position="fixed">
 		<Slider bind:value={modelScale} min={0.001} max={1} step={0.001} label="Scale" />
 		<Folder title="Model Position">
@@ -82,54 +128,94 @@
 			<Slider bind:value={modelRotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
 		</Folder>
 	</Pane>
-{/if}
+{/if} -->
 <!-- <PerfMonitor anchorX={'left'} logsPerSecond={30} /> -->
-<T.PerspectiveCamera
-	on:create={({ ref }) => {
-		ref.lookAt(0, 1, 0);
-	}}
-	makeDefault
-	position={cameraPosition}
-	fov={cameraFov}
->
-	<OrbitControls rotateSpeed={0.3} enableZoom={false} enableDamping target.y={1.5} />
-</T.PerspectiveCamera>
 
-<Stars />
+{#if showUi}
+	<!-- <LightSpeed /> -->
+
+	<ScreenUi
+		scale={0.02}
+		windowWidth={500}
+		windowHeight={400}
+		on:create={({ cleanup }) => {
+			cleanup(() => {
+				console.log('ui cleanup');
+			});
+		}}
+	/>
+
+	<!-- </Float> -->
+{:else if !showUi}
+	<T.Group
+		on:create={({ ref, cleanup }) => {
+			cleanup(() => {
+				console.log('room cleanup');
+			});
+		}}
+		castShadow
+		receiveShadow
+	>
+		<Grid
+			position.y={-0.5}
+			cellColor="#ffffff"
+			sectionColor="#ffffff"
+			sectionThickness={0}
+			fadeDistance={25}
+			cellSize={2}
+		/>
+
+		<Room scale={0.5} rotation.y={-2} transition={scale}></Room>
+
+		<Keyboard />
+		<AppleDesktop
+			position={[1.5, 0.33, 1.5]}
+			rotation={macbookRotation}
+			scale={$macbookScale}
+			on:click={handleOpenUi}
+			on:pointerenter={() => {
+				onPointerEnter();
+				macbookScale.set(0.017);
+			}}
+			on:pointerleave={() => {
+				onPointerLeave();
+				macbookScale.set(0.015);
+			}}
+		/>
+
+		{#if modelUrl}
+			<Model
+				scale={$modelValues.scale}
+				position={$modelValues.position}
+				rotation={$modelValues.rotation}
+				{modelUrl}
+			/>
+		{/if}
+		<T.Mesh position={[1.5, 2, -5]} rotation.y={rotation} castShadow receiveShadow>
+			<T.BoxGeometry args={[1, 2, 1]} />
+			<T.MeshNormalMaterial color="hotpink" />
+		</T.Mesh>
+	</T.Group>
+{/if}
+<T.PerspectiveCamera makeDefault position={[-20, 10, 10]} fov={15}>
+	<OrbitControls enableZoom={false} enableDamping autoRotateSpeed={0.5} target.y={1.5} />
+</T.PerspectiveCamera>
+<Stars speed={3} />
 <Sky
 	setEnvironment
-	turbidity={10}
-	rayleigh={3}
-	azimuth={120}
+	turbidity={3}
+	rayleigh={1.5}
+	azimuth={68}
 	elevation={0.25}
-	mieCoefficient={0.005}
+	mieCoefficient={0.1}
 />
 
-<Grid
-	position.y={-0.5}
-	cellColor="#ffffff"
-	sectionColor="#ffffff"
-	sectionThickness={0}
-	fadeDistance={25}
-	cellSize={2}
-/>
-
-<ContactShadows scale={10} blur={2} far={2.5} opacity={0.5} />
-
-<Room scale={0.5} rotation.y={-Math.PI / 2} />
-
-<Macbook position={[1.4, 1.22, 0.5]} scale={0.015} rotation={macbookRotation} />
-
-<Float floatIntensity={0.1} floatingRange={[0, 0.3]}>
-	{#if modelUrl}
-		<Model
-			scale={$modelValues.scale}
-			position={$modelValues.position}
-			rotation={$modelValues.rotation}
-			{modelUrl}
-		/>
-	{/if}
-</Float>
-
-<style>
-</style>
+<!-- <T.Mesh position.y={3}>
+	<T.PlaneGeometry />
+	<ImageMaterial
+	  transparent
+	  url={webUrl}
+	  radius={0.1}
+	  zoom={1.1}
+	/>
+</T.Mesh> -->
