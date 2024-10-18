@@ -29,7 +29,7 @@
 			const res = await getAllModels();
 			modelList = res;
 			setModelStore(modelList);
-			
+
 			isLoading = false;
 		} catch (error) {
 			console.error('Failed to load models:', error);
@@ -55,7 +55,7 @@
 						{@const model = currentPage[index]}
 						{@const url = model.thumbnail}
 						{@const title = model.title}
-						{@const description = model.description || null}
+						{@const description = model.owner || null}
 						{@const id = model.uid}
 						{@const thumbZoom = 0.7}
 

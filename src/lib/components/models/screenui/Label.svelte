@@ -17,12 +17,12 @@
 		l: 10,
 		xl: 12
 	};
-	$: fontUrl = `/fonts/Catrinity.otf`;
+	export let font = `/fonts/Catrinity.otf`;
 	const reflow = useReflow();
 </script>
 
 <Text
-	font={fontUrl}
+	font={font}
 	position.z={z}
 	{text}
 	{anchorX}

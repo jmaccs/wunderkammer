@@ -26,13 +26,15 @@ export const screenValue = writable({
 	currentPage: null
 });
 
-
+export const modelLoading = writable(false);
 
 export const model = writable(null);
 export const modelsStore = writable([])
 
 export function setModelStore(modelList) {
-	modelsStore.set(modelList);
+	if(modelList != null)
+	{modelsStore.set(modelList);}
+	else modelsStore.set(null)
 }
 
 export function setScreen(id) {

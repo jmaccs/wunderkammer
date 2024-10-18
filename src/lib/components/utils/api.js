@@ -46,6 +46,9 @@ export async function getAllModels() {
 			const thumbnail = model.thumbnails?.images?.find(
 				(image) => image.width >= 150 && image.width < 500
 			);
+			const lgImage = model.thumbnails?.images?.find(
+				(image) => image.width >= 500 
+			);
 			return {
 				type: 'model',
 				title: model.name,
@@ -55,7 +58,8 @@ export async function getAllModels() {
 				categories: model.categories
 					? model.categories.map((category) => category.name)
 					: 'No categories found',
-				thumbnail: thumbnail ? thumbnail.url : 'No suitable thumbnail found'
+				thumbnail: thumbnail ? thumbnail.url : 'No suitable thumbnail found',
+				image : lgImage ? lgImage.url : thumbnail.url
 			};
 		});
 		return processedModels;

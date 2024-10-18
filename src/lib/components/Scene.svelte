@@ -29,6 +29,7 @@
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
+
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
 	import LightSpeed from './models/screenui/LightSpeed.svelte';
@@ -167,7 +168,7 @@
 
 		<Room scale={0.5} rotation.y={-2} transition={scale}></Room>
 
-		<Keyboard />
+		<Keyboard scale={0.01}/>
 		<AppleDesktop
 			position={[1.5, 0.33, 1.5]}
 			rotation={macbookRotation}

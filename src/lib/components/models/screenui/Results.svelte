@@ -70,25 +70,26 @@
 		<T.PlaneGeometry args={[100, 100, 2]} />
 
 		<ImageMaterial {url} radius={0.1} zoom={thumbZoom} {saturation} class="relative" />
-		{#if $hovering && description}
-			<HTML in={scaleTransition} out={scaleTransition}>
+	</T.Mesh>
+	{#if $hovering && description}
+		<HTML in={scaleTransition} out={scaleTransition}>
+			<div
+				class="absolute h-auto w-auto max-w-screen rounded-sm opacity-80 text-wrap bg-gray-600 sepia"
+			>
 				<div
-					class="absolute h-auto w-auto max-w-screen rounded-sm opacity-80 text-wrap bg-gray-600 sepia"
+					class="bg-gray-50 p-10 border-black border-2 !aspect-video max-w-full max-h-full divide-y divide-current"
 				>
-					<div
-						class="bg-gray-50 p-10 border-black border-2 !aspect-video max-w-full max-h-full divide-y divide-current"
-					>
-						<div>
-							<h1 class="text-gray-800 font-serif text-center text-xl mb-2">{title}</h1>
-						</div>
-						<div class="p-4">
-							<p>{description}</p>
-						</div>
+					<div>
+						<h1 class="text-gray-800 font-serif text-center text-xl mb-2">{description}</h1>
+					</div>
+					<div class="p-4">
+						<p>{title}</p>
 					</div>
 				</div>
-			</HTML>
-		{/if}
-	</T.Mesh>
+			</div>
+		</HTML>
+	{/if}
+
 	<Box class="h-auto w-auto flex-0 items-center justify-center mt-8">
 		<Label
 			text={title}

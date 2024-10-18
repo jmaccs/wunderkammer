@@ -2,47 +2,59 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { Box } from '@threlte/flex';
 	import {
-		Text,
+		Text3DGeometry,
 		RoundedBoxGeometry,
 		ImageMaterial,
 		createTransition,
 		useCursor,
-        HTML
+		HTML
 	} from '@threlte/extras';
-    import Label from './Label.svelte';
+	import Label from './Label.svelte';
 	import { T } from '@threlte/core';
-    import { model, modelsStore } from '../../utils/stores';
+	import { model, modelsStore } from '../../utils/stores';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
+	import Results from './Results.svelte';
 	import Loading from '../../utils/Loading.svelte';
+	import * as THREE from 'three';
+	import { useLoader } from '@threlte/core';
+
+	const loadCubeTexture = () => {
+		return new Promise((resolve, reject) => {
+			const loader = new THREE.CubeTextureLoader();
+			loader.setPath('/img/button/');
+
+			loader.load(
+				['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png'],
+				(loadedTexture) => {
+					resolve(loadedTexture);
+				},
+				undefined,
+				(error) => {
+					console.error('Error loading cube texture:', error);
+					reject(error);
+				}
+			);
+		});
+	};
 
 	export let modelUid;
-	let modelData = null;
-
+	let font;
+	let rows = 1;
+	let columns = 1;
+	let itemPerPage = 1;
+	let saturation = 0;
 	const { onPointerEnter, onPointerLeave, hovering } = useCursor();
 	const scale = spring(0.9);
 	$: scale.set($hovering ? 1 : 0.9);
 	$: saturation = $hovering ? 1 : 0;
+
+	$: modelData = $model;
 	let isLoading = true;
 	const animDelay = 10;
 
-    function setModel(uid) {
-
-    modelsStore.subscribe((models) => {
-        if (!models || models.length === 0) return;
-
-      
-        const foundModel = models.find((model) => model.uid === uid);
-
-        
-        if (foundModel) {
-            model.set(foundModel);
-        }
-    });
-}
 	const unsubModel = model.subscribe(($model) => {
 		modelData = $model;
-        console.log(modelData)
 	});
 
 	const scaleTransition = createTransition((ref, { direction }) => {
@@ -59,9 +71,9 @@
 	onMount(async () => {
 		try {
 			isLoading = true;
+			await modelData;
 
-			setModel(modelUid);
-            
+			console.log(modelData);
 		} catch (error) {
 			console.error('Failed to load model data:', error);
 		} finally {
@@ -73,49 +85,64 @@
 	});
 </script>
 
-<Box class="h-full w-full flex-1" let:height let:width>
+{#key $model}
 	{#await modelData}
-		<T.Group
-			in={scaleTransition}
-			out={scaleTransition}
-			on:create={({ cleanup }) => {
-				cleanup(() => {
-					console.log('result cleanup');
-				});
-			}}
-		>
-			<!-- {@const user = modelData.user?.displayName} -->
-			{@const url = modelData.thumbnail}
-			{@const title = modelData.title}
-			{@const description = modelData.description || null}
+		<Loading />
+	{:then modelData}
+		<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
+			<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
+				<Box class="h-full w-full flex-1">
+					{@const index = 1}
 
-			{#if url}
-				<T.Mesh position.z={30}>
-					<RoundedBoxGeometry args={[200, 200, 2]} />
-					<ImageMaterial {url} zoom={0.5} radius={0.1} class="relative" />
-				</T.Mesh>
-				<Text text={title} anchorX="center" />
-			{/if}
-			{#if description}
-            <HTML in={scaleTransition} out={scaleTransition}>
-				<div
-					class="absolute h-auto w-auto max-w-screen rounded-sm opacity-80 text-wrap bg-gray-600 sepia"
-				>
-					<div
-						class="bg-gray-50 p-10 border-black border-2 !aspect-video max-w-full max-h-full divide-y divide-current"
-					>
-						<div>
-							<h1 class="text-gray-800 font-serif text-center text-xl mb-2">{title}</h1>
-						</div>
-						<div class="p-4">
-							<p>{description}</p>
-						</div>
-					</div>
-				</div>
-			</HTML>
-			{/if}
-		</T.Group>
-	{:catch error}
-		<p>Error loading model data: {error.message}</p>
+					{@const url = modelData.image || null}
+					{@const title = modelData.title}
+					{@const owner = modelData.owner || null}
+					{@const id = modelData.uid}
+					{@const thumbZoom = 0.7}
+
+					<Box class="h-full w-full flex-1" let:width let:height>
+						<T.Group
+							in={scaleTransition}
+							out={scaleTransition}
+							on:create={({ cleanup }) => {
+								cleanup(() => {
+									console.log('result cleanup');
+								});
+							}}
+						>
+							<T.Mesh
+								scale.x={(width / 100) * $scale}
+								scale.y={(height / 100) * $scale}
+								scale.z={$scale}
+								position.z={20}
+								on:pointerenter={onPointerEnter}
+								on:pointerleave={onPointerLeave}
+							>
+								<T.PlaneGeometry args={[100, 100, 2]} />
+
+								<ImageMaterial {url} radius={0.1} zoom={thumbZoom} {saturation} class="relative" />
+							</T.Mesh>
+
+							<Box class="h-auto w-auto flex-0 items-center justify-center mt-4">
+								<Label
+									text={title}
+									z={25}
+									fontStyle="semi-bold"
+									fontSize={'l'}
+									font="/fonts/Quivira.otf"
+									color="#FFFFFF"
+								/>
+							</Box>
+						</T.Group>
+					</Box>
+				</Box>
+			</Box>
+		</Box>
 	{/await}
-</Box>
+	<!-- {#await loadCubeTexture() then map}
+		<T.Mesh scale.x={$scale} scale.y={$scale} position={[500, 0, 35]}>
+			<T.BoxGeometry args={[100, 100, 2]} />
+			<T.MeshBasicMaterial color="white" {map} />
+		</T.Mesh>
+	{/await} -->
+{/key}
