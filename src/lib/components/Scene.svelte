@@ -23,12 +23,12 @@
 		macbookValues,
 		screenValue,
 		toggleScreen,
-		setCurrentPage
+		setScreen,
+		
 	} from './utils/stores.js';
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
-
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
 	import LightSpeed from './models/screenui/LightSpeed.svelte';
@@ -85,7 +85,7 @@
 		await tick();
 		if (!showUi) {
 			toggleScreen(true);
-			setCurrentPage('menu');
+			setScreen('menu')
 		}
 	}
 
@@ -140,7 +140,7 @@
 		windowHeight={400}
 		on:create={({ cleanup }) => {
 			cleanup(() => {
-				console.log('ui cleanup');
+				console.log('screen cleanup');
 			});
 		}}
 	/>
@@ -209,6 +209,7 @@
 	elevation={0.25}
 	mieCoefficient={0.1}
 />
+
 
 <!-- <T.Mesh position.y={3}>
 	<T.PlaneGeometry />

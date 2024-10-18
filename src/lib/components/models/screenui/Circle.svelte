@@ -2,8 +2,9 @@
 	import { T } from '@threlte/core';
 	import { interactivity } from '@threlte/extras';
 	import { spring } from 'svelte/motion';
-	import { toggleScreen, setCurrentPage } from '../../utils/stores';
+	import { toggleScreen, setScreen } from '../../utils/stores';
 	import { createEventDispatcher } from 'svelte';
+
 	export let color = 'white';
 	export let radius = 5;
 	export let z = 0;
@@ -13,7 +14,8 @@
 
 	function handleClick() {
 		toggleScreen(false);
-		setCurrentPage(null);
+		setScreen(null);
+	
 	}
 </script>
 

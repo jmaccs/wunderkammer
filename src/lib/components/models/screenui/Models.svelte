@@ -3,7 +3,8 @@
 	import { interactivity, transitions, Align } from '@threlte/extras';
 	import { T } from '@threlte/core'
 	import { getAllModels } from '../../utils/api.js';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
+	import { setModelStore } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
 	import Label from './Label.svelte';
@@ -23,9 +24,12 @@
 	$: totalPages = Math.ceil(modelList.length / itemsPerPage);
 
 	async function loadModels() {
+	
 		try {
 			const res = await getAllModels();
 			modelList = res;
+			setModelStore(modelList);
+			
 			isLoading = false;
 		} catch (error) {
 			console.error('Failed to load models:', error);
@@ -35,16 +39,17 @@
 
 	const { reflow } = useReflow();
 	onMount(async () => {
-		await loadModels();
-		console.log(width, height)
+	
+		await loadModels()
+		
 	});
 </script>
 
-
+<Box class="h-full w-full flex-col items-stretch gap-10 p-10" >
 	{#each new Array(rows) as _, rowIndex}
-		<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
+		<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
 			{#each new Array(columns) as _, columnIndex}
-				<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
+				<Box class="h-full w-full flex-1">
 					{@const index = rowIndex * columns + columnIndex}
 					{#if currentPage[index]}
 						{@const model = currentPage[index]}
@@ -98,3 +103,4 @@
 			}}
 		/>
 	</Box>
+</Box>

@@ -14,6 +14,20 @@ export async function getModels(model) {
 		console.error('Error fetching models from Sketchfab:', response.status);
 	}
 }
+export async function getModelData(model) {
+	const response = await fetch(`https://api.sketchfab.com/v3/models/${model}`, {
+		headers: {
+			Authorization: `Token ${API_KEY}`
+		}
+	});
+	if (response.ok) {
+		const data = await response.json();
+
+		return data;
+	} else {
+		console.error('Error fetching model data from Sketchfab:', response.status);
+	}
+}
 
 export async function getAllModels() {
 	const response = await fetch(
@@ -27,24 +41,25 @@ export async function getAllModels() {
 	if (response.ok) {
 		const res = await response.json();
 		const allModels = res.results;
-		
-		const processedModels = allModels.map(model =>{
-            const thumbnail = model.thumbnails?.images?.find(
-                (image) => image.width >= 150 && image.width < 500
-            );
-            return {
+
+		const processedModels = allModels.map((model) => {
+			const thumbnail = model.thumbnails?.images?.find(
+				(image) => image.width >= 150 && image.width < 500
+			);
+			return {
 				type: 'model',
-                title: model.name,
-                description: model.description,
-                uid: model.uid,
-                categories: model.categories? model.categories.map((category) => category.name): 'No categories found',
-                thumbnail: thumbnail ? thumbnail.url : 'No suitable thumbnail found'
-            }
-            
-        });
-        return processedModels
+				title: model.name,
+				owner: model.user?.displayName,
+				description: model.description,
+				uid: model.uid,
+				categories: model.categories
+					? model.categories.map((category) => category.name)
+					: 'No categories found',
+				thumbnail: thumbnail ? thumbnail.url : 'No suitable thumbnail found'
+			};
+		});
+		return processedModels;
 	} else {
 		console.error('Error fetching models from Sketchfab:', response.status);
 	}
 }
-

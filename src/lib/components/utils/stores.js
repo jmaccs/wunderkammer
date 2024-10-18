@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 import { tweened } from 'svelte/motion';
 import { cubicOut } from 'svelte/easing';
 
-export const model = writable(null);
+
 
 export const modelValues = writable({
 	scale: 0.01,
@@ -26,30 +26,20 @@ export const screenValue = writable({
 	currentPage: null
 });
 
-export const models = writable([])
 
 
-export function setCurrentPage(id) {
-	screenValue.update((state) => ({ ...state, currentPage: id }));
+export const model = writable(null);
+export const modelsStore = writable([])
+
+export function setModelStore(modelList) {
+	modelsStore.set(modelList);
 }
 
-
-
+export function setScreen(id) {
+	screenValue.update((state) => ({ ...state, currentPage: id }));
+}
 
 export function toggleScreen(bool) {
 	screenValue.update((state) => ({ ...state, screenOpen: bool }));
 }
-
-export const winamp = writable({
-	winampOpen: undefined,
-	isPlaying: undefined
-});
-
-// export function toggleWinamp(bool) {
-// 	winamp.update((state) => ({ ...state, winampOpen: bool }));
-// }
-
-// export function togglePlaying(bool) {
-// 	winamp.update((state) => ({ ...state, isPlaying: bool }));
-// }
 

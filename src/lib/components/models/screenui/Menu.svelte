@@ -14,7 +14,7 @@
 
 	import Results from './Results.svelte';
 	import { Group } from 'three';
-	import { scaleTransition } from '../../utils/responsivityUtils';
+
 	import Label from './Label.svelte';
 
 	export let menuOptions = [
@@ -59,7 +59,7 @@
 	const component = forwardEventHandlers();
 
 	const dispatch = createEventDispatcher();
-
+	
 	function handleClick(id) {
 		dispatch('select', { value: id });
 	}
@@ -69,7 +69,7 @@
 	});
 </script>
 
-
+<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
 	{#each menuOptions as option, i (option.id)}
 		{@const index = i}
 		{@const description = null}
@@ -87,6 +87,8 @@
 			{id}
 			{thumbZoom}
 			{index}
+			on:select
 			/>
 		</Box>
 	{/each}
+</Box>

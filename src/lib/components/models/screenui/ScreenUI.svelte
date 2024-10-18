@@ -8,8 +8,8 @@
 	import Models from './Models.svelte';
 	import Window from './Window.svelte';
 	import Menu from './Menu.svelte';
-
-	import { model, screenValue, setCurrentPage } from '../../utils/stores';
+	import ModelPage from './ModelPage.svelte';
+	import { model, screenValue, setScreen } from '../../utils/stores';
 	const component = forwardEventHandlers();
 	export let windowWidth = 800;
 	export let windowHeight = 800;
@@ -17,26 +17,24 @@
 	let columns;
 
 	export const ref = new THREE.Group();
-	let currentPage;
-	// $: currentPage = $screenValue.currentPage;
-	watch(screenValue, ($screenValue) => {
-		currentPage = $screenValue.currentPage;
-		return () => {
-			console.log('cleanup');
-		};
-	});
+
 	interactivity();
 	transitions();
 
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
 
-	function handleMessage(event) {
+	function handleModel(event) {
 		const id = event.detail.value;
 
-		setCurrentPage(id);
+		setScreen(id);
+		console.log(id);
 	}
-	function handleModel(id) {
-		console.log('handleModel', id);
+
+	function handleMenuChoice(event) {
+		const choice = event.detail.value;
+		setScreen(choice);
+
+		console.log('choice', choice);
 	}
 	const renderUI = () => {
 		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
@@ -51,8 +49,7 @@
 	};
 
 	const unsubScreen = screenValue.subscribe(($screenValue) => {
-		currentPage = $screenValue.currentPage;
-		
+		$screenValue.currentPage;
 	});
 
 	onMount(() => {
@@ -66,7 +63,6 @@
 		async () => {
 			await tick();
 			renderer.render(scene, camera.current);
-			// console.log(windowHeight +'ww' + windowWidth + 'wh')
 		},
 		{ stage: renderStage }
 	);
@@ -74,16 +70,17 @@
 
 <T is={ref} {...$$restProps} bind:this={$component}>
 	<Window title="wunderkammer" width={windowWidth} height={windowHeight}>
-		{#key currentPage}
-			<Box class="h-full w-full flex-col  gap-10 p-10">
-				{#if currentPage === 'models'}
-					<Models on:select={handleMessage} />
-				{:else if currentPage === 'menu'}
-					<Menu on:select={handleMessage} />
-				{:else}
-					<p>Page not found</p>
-				{/if}
-			</Box>
+		{#key $screenValue.currentPage}
+			{#if $screenValue.currentPage === 'models'}
+				<Models on:select={handleModel} />
+			{/if}
+
+			{#if $screenValue.currentPage === 'menu'}
+				<Menu on:select={handleMenuChoice} />
+			{/if}
+			{#if $screenValue.currentPage.length > 10}
+				<ModelPage modelUid={$screenValue.currentPage} />
+			{/if}
 		{/key}
 	</Window>
 </T>

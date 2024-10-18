@@ -5,7 +5,6 @@
 	import { spring } from 'svelte/motion';
 
 	import Label from './Label.svelte';
-	import { setCurrentPage } from '../../utils/stores';
 	import { onDestroy, createEventDispatcher } from 'svelte';
 	import { useReflow, Box } from '@threlte/flex';
 	const component = forwardEventHandlers();
@@ -13,33 +12,33 @@
 	export let url;
 	export let description;
 	export let id;
-	export let index ;
+	export let index;
 	export let thumbZoom = 0.7;
-	export let width 
-	export let height 
+	export let width;
+	export let height;
 
 	let saturation = 0;
 	const { onPointerEnter, onPointerLeave, hovering } = useCursor();
-	const scale = spring(0.9)
+	const scale = spring(0.9);
 	$: scale.set($hovering ? 1 : 0.9);
 	$: saturation = $hovering ? 1 : 0;
 
 	const animDelay = index * 10;
 
 	const scaleTransition = createTransition((ref, { direction }) => {
-    return {
-      tick(t) {
-        ref.scale.setScalar(t)
-      },
-      delay: animDelay + (direction === 'in' ? 200 : 0),
-      duration: 200,
-      easing: direction === 'in' ? cubicOut : cubicIn
-    }
-  })
+		return {
+			tick(t) {
+				ref.scale.setScalar(t);
+			},
+			delay: animDelay + (direction === 'in' ? 200 : 0),
+			duration: 200,
+			easing: direction === 'in' ? cubicOut : cubicIn
+		};
+	});
 	const dispatch = createEventDispatcher();
 	function handleClick(id) {
-		dispatch('select', { value : id });
-		console.log(id)
+		dispatch('select', { value: id });
+		console.log(id);
 	}
 	const reflow = useReflow();
 	$: fontUrl = `/fonts/Catrinity.otf`;
@@ -51,7 +50,11 @@
 <T.Group
 	in={scaleTransition}
 	out={scaleTransition}
-	
+	on:create={({ cleanup }) => {
+		cleanup(() => {
+			console.log('result cleanup');
+		});
+	}}
 >
 	<T.Mesh
 		scale.x={(width / 100) * $scale}
@@ -64,7 +67,7 @@
 			handleClick(id);
 		}}
 	>
-		<T.PlaneGeometry args={[100, 100, 1]} />
+		<T.PlaneGeometry args={[100, 100, 2]} />
 
 		<ImageMaterial {url} radius={0.1} zoom={thumbZoom} {saturation} class="relative" />
 		{#if $hovering && description}
@@ -93,7 +96,6 @@
 			fontStyle="semi-bold"
 			fontSize={description ? 'm' : 'l'}
 			color="#FFFFFF"
-		
 		/>
 	</Box>
 </T.Group>

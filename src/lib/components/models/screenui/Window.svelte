@@ -12,7 +12,7 @@
 	export let height = 80;
 </script>
 
-<Flex classParser={tailwindParser} {width} {height} class="flex-col gap-1 p-1">
+<Flex classParser={tailwindParser} {width} {height} class="flex-col gap-1 p-1" let:reflow >
 	<T.Mesh>
 		<RoundedBoxGeometry args={[width, height, 20]} radius={6} />
 		<T.MeshBasicMaterial color="#0A0F19" transparent opacity={0.5} transition={fade} />
@@ -37,7 +37,10 @@
 			<Label text={title} z={25} fontStyle="semi-bold" fontSize="l" color="#454649" />
 		</Box>
 	</Box>
-	<Box class="h-auto w-auto flex-1" let:width let:height>
+	<Box class="h-auto w-auto flex-1" let:width let:height >
+		
+	
 		<slot {width} {height} />
+		
 	</Box>
 </Flex>
