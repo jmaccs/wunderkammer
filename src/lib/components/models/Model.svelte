@@ -1,7 +1,6 @@
 <script>
-	import { GLTF, useGltf, useProgress, Billboard, Text3DGeometry } from '@threlte/extras';
-	import { forwardEventHandlers, useTask } from '@threlte/core';
-	import { T, useThrelte } from '@threlte/core';
+	import { GLTF, useProgress, Billboard, Text3DGeometry } from '@threlte/extras';
+	import { T } from '@threlte/core';
 	import LightSpeed from './screenui/LightSpeed.svelte';
 	import { onMount } from 'svelte';
 	export let modelUrl;

@@ -1,23 +1,17 @@
 <script>
 	import {
-		Align,
-		FakeGlowMaterial,
-		ImageMaterial,
 		interactivity,
-		useCursor,
-		Text3DGeometry
+		useCursor
 	} from '@threlte/extras';
 	import { useReflow, Box } from '@threlte/flex';
-	import { T, forwardEventHandlers } from '@threlte/core';
-	import { onDestroy, onMount, createEventDispatcher } from 'svelte';
-	import { spring } from 'svelte/motion';
-
-	import Results from './Results.svelte';
+	import { forwardEventHandlers } from '@threlte/core';
+	import { onDestroy, createEventDispatcher } from 'svelte';
+	
+import Results from './Results.svelte';
 	import { Group } from 'three';
 
-	import Label from './Label.svelte';
-
-	export let menuOptions = [
+	
+export let menuOptions = [
 		{
 			optionName: 'Paintings',
 			optionThumbnail: '/img/paintings.jpg',

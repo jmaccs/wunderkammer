@@ -8,10 +8,8 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	import { T, forwardEventHandlers, watch } from '@threlte/core';
 	import {
 		useGltf,
-		useSuspense,
 		interactivity,
-		Float,
-		MeshRefractionMaterial
+		Float
 	} from '@threlte/extras';
 	import { spring } from 'svelte/motion';
 	import { onDestroy, onMount } from 'svelte';

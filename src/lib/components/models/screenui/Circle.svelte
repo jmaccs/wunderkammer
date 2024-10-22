@@ -3,9 +3,8 @@
 	import { interactivity } from '@threlte/extras';
 	import { spring } from 'svelte/motion';
 	import { toggleScreen, setScreen } from '../../utils/stores';
-	import { createEventDispatcher } from 'svelte';
-
-	export let color = 'white';
+	
+export let color = 'white';
 	export let radius = 5;
 	export let z = 0;
 

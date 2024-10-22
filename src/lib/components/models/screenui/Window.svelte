@@ -1,12 +1,11 @@
 <script>
-	import { T, forwardEventHandlers } from '@threlte/core';
-	import { RoundedBoxGeometry, Align } from '@threlte/extras';
+	import { T } from '@threlte/core';
+	import { RoundedBoxGeometry } from '@threlte/extras';
 	import { Box, Flex, tailwindParser } from '@threlte/flex';
 
 	import Circle from './Circle.svelte';
 	import Label from './Label.svelte';
 	import { fade } from '../../utils/responsivityUtils';
-	import { spring } from 'svelte/motion';
 	export let title;
 	export let width = 800;
 	export let height = 800;

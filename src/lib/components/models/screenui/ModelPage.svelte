@@ -2,25 +2,18 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { Box } from '@threlte/flex';
 	import {
-		Text3DGeometry,
-		RoundedBoxGeometry,
 		ImageMaterial,
 		createTransition,
-		useCursor,
-		HTML
+		useCursor
 	} from '@threlte/extras';
 	import Label from './Label.svelte';
 	import { T } from '@threlte/core';
-	import { model, modelsStore } from '../../utils/stores';
+	import { model } from '../../utils/stores';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
-	import Results from './Results.svelte';
 	import LightSpeed from './LightSpeed.svelte';
-	import * as THREE from 'three';
-	import { useLoader } from '@threlte/core';
-
-	export let modelUid;
-	let font;
+	
+let font;
 	let rows = 1;
 	let columns = 1;
 	let itemPerPage = 1;

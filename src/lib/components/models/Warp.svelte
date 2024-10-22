@@ -1,5 +1,5 @@
 <script>
-	import { T, useTask, useLoader } from '@threlte/core';
+	import { T, useTask } from '@threlte/core';
 	import * as THREE from 'three';
 	import VertexShader from './shaders/vertex.glsl?raw';
 	import FragmentShader from './shaders/fragment.glsl?raw';

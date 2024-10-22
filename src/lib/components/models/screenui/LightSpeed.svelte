@@ -1,6 +1,6 @@
 <script>
 	import { T, useTask } from '@threlte/core';
-	import { Instance, InstancedMesh, useTexture } from '@threlte/extras';
+	import { Instance, InstancedMesh } from '@threlte/extras';
 	import { Color, DoubleSide, Vector3 } from 'three';
 
 	let STARS_COUNT = 350;

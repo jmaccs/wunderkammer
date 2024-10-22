@@ -2,11 +2,9 @@
 	import { Text } from '@threlte/extras';
 
 	import { useReflow } from '@threlte/flex';
-	import { forwardEventHandlers } from '@threlte/core';
 	export let text;
 	export let color = 'white';
 	export let z = 0;
-	export let fontStyle = 'regular';
 	export let anchorX = '50%';
 	export let anchorY = '50%';
 	export let fontSize = 'l';

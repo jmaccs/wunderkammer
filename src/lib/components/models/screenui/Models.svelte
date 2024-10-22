@@ -1,9 +1,7 @@
 <script>
-	import { Box, useReflow, Flex, useDimensions } from '@threlte/flex';
-	import { interactivity, transitions, Align } from '@threlte/extras';
-	import { T } from '@threlte/core'
+	import { Box, useReflow, useDimensions } from '@threlte/flex';
 	import { getAllModels } from '../../utils/api.js';
-	import { onDestroy, onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import { setModelStore } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
@@ -81,7 +79,7 @@
 	<Box order={999} class="h-40 w-auto items-center justify-center gap-10">
 		<Button
 			class="h-full w-auto flex-1"
-			z={15}
+			z={20}
 			text="← PREVIOUS PAGE"
 			order={0}
 			on:click={() => {
@@ -95,7 +93,7 @@
 
 		<Button
 			class="h-full w-auto flex-1"
-			z={15}
+			z={20}
 			text="NEXT PAGE →"
 			order={999}
 			on:click={() => {

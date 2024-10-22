@@ -1,6 +1,6 @@
 <script>
 	import { GLTF, useGltfAnimations, createTransition } from '@threlte/extras';
-	import { forwardEventHandlers, T, useThrelte } from '@threlte/core';
+	import { forwardEventHandlers } from '@threlte/core';
 	import * as THREE from 'three';
 	import { cubicOut } from 'svelte/easing';
 	const { gltf, actions, mixer } = useGltfAnimations();

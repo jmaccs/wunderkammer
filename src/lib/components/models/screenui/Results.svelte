@@ -1,6 +1,6 @@
 <script>
 	import { T, forwardEventHandlers } from '@threlte/core';
-	import { createTransition, useCursor, HTML, ImageMaterial, Outlines } from '@threlte/extras';
+	import { createTransition, useCursor, HTML, ImageMaterial } from '@threlte/extras';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
 

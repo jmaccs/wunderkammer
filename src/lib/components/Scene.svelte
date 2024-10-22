@@ -1,10 +1,8 @@
 <script>
-	import { Pane, Slider, Folder } from 'svelte-tweakpane-ui';
-
-	import { onMount, onDestroy, tick, afterUpdate } from 'svelte';
-	import { spring, tweened } from 'svelte/motion';
-	import { cubicOut, cubicIn } from 'svelte/easing';
-	import * as THREE from 'three';
+	
+import { onDestroy, tick } from 'svelte';
+	import { spring } from 'svelte/motion';
+	import { cubicIn } from 'svelte/easing';
 	import { T, extend, useTask } from '@threlte/core';
 
 	import {
@@ -13,16 +11,13 @@
 		Stars,
 		interactivity,
 		OrbitControls,
-		transitions,
 		createTransition,
 		useCursor,
 		Align
 	} from '@threlte/extras';
-	import { DEG2RAD } from 'three/src/math/MathUtils.js';
 	import {
 		modelValues,
 		cameraValues,
-		macbookValues,
 		screenValue,
 		toggleScreen,
 		setScreen,
@@ -33,7 +28,6 @@
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
-	import Warp from './models/Warp.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';

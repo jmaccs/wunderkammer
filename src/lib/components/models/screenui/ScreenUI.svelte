@@ -16,7 +16,6 @@
 	import Menu from './Menu.svelte';
 	import ModelPage from './ModelPage.svelte';
 	import Lever from './Lever.svelte';
-	import LightSpeed from './LightSpeed.svelte';
 	let triggerAnimation;
 	import {
 		model,
