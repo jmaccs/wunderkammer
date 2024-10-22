@@ -1,9 +1,15 @@
 <script>
-	import { useTask, useThrelte, forwardEventHandlers, T, useCache, watch } from '@threlte/core';
-	import { fade } from 'svelte/transition';
-	import { interactivity, transitions, Text3DGeometry } from '@threlte/extras';
+	import {
+		useTask,
+		useThrelte,
+		forwardEventHandlers,
+		T,
+		useThrelteUserContext
+	} from '@threlte/core';
+	import { interactivity, transitions } from '@threlte/extras';
 	import * as THREE from 'three';
-	import { Box } from '@threlte/flex';
+	import { fetchModels } from '../../utils/api';
+
 	import { onMount, onDestroy, tick } from 'svelte';
 	import Models from './Models.svelte';
 	import Window from './Window.svelte';
@@ -18,41 +24,35 @@
 		setScreen,
 		toggleScreen,
 		setModelStore,
-		modelsStore,
-		modelLoading
+		setModelUrl,
+		setModel,
+		setShowModel
 	} from '../../utils/stores';
 	const uiComponent = forwardEventHandlers();
 	const leverComponent = forwardEventHandlers();
-	export let windowWidth = 800;
-	export let windowHeight = 800;
+	export let windowWidth = 400;
+	export let windowHeight = 400;
 	let rows;
 	let columns;
+	let lever = false
 	let modelUI = false;
+	let selectedModelId;
+	let modelUrl = '';
 	export const uiRef = new THREE.Group();
 	export const leverRef = new THREE.Group();
 	interactivity();
 	transitions();
-
+	const userCtx = useThrelteUserContext();
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
-	async function setModel(uid) {
-		modelsStore.subscribe((models) => {
-			if (!models || models.length === 0) return;
 
-			const foundModel = models.find((model) => model.uid === uid);
-
-			if (foundModel) {
-				model.set(foundModel);
-			} else if (uid === null) {
-				model.set(null);
-			}
-		});
-	}
 	async function handleModel(event) {
 		const id = event.detail.value;
 
 		setScreen(id);
 		await setModel(id);
 		modelUI = true;
+		lever = true
+		
 	}
 
 	function handleMenuChoice(event) {
@@ -61,9 +61,11 @@
 
 		console.log('choice', choice);
 	}
+
+
 	const renderUI = () => {
 		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
-		const distanceFromCamera = 35;
+		const distanceFromCamera = 1500;
 
 		uiRef.position
 			.copy(camera.current.position)
@@ -72,33 +74,43 @@
 		uiRef.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
 		// ref.rotation.z = -0.251;
 	};
-	const renderLever = () => {
-		const distanceFromScreen = 10;
 
-		const rightDirection = new THREE.Vector3().crossVectors(
-			camera.current.up,
-			camera.current.getWorldDirection(new THREE.Vector3())
-		);
+	// const renderLever = () => {
+	// 	const distanceFromScreen = 350;
 
-		leverRef.position.copy(uiRef.position).add(rightDirection.multiplyScalar(distanceFromScreen));
+	// 	const rightDirection = new THREE.Vector3().crossVectors(
+	// 		camera.current.up,
+	// 		camera.current.getWorldDirection(new THREE.Vector3())
+	// 	);
 
-		leverRef.lookAt(
-			camera.current.position.x,
-			camera.current.position.y,
-			camera.current.position.z
-		);
-	};
-	function handleLoadTransition() {
-		modelLoading.set(true);
-		setTimeout(() => {
-			modelLoading.set(false);
-			toggleScreen(false);
-			setScreen(null);
-		}, 10000);
+	// 	leverRef.position.copy(uiRef.position).add(rightDirection.multiplyScalar(distanceFromScreen));
+
+	// 	leverRef.lookAt(
+	// 		camera.current.position.x,
+	// 		camera.current.position.y,
+	// 		camera.current.position.z
+	// 	);
+	// };
+	async function getModel() {
+		try {
+			selectedModelId = $model.uid;
+			console.log('selectedModelId:', selectedModelId);
+			modelUrl = await fetchModels(selectedModelId);
+			return modelUrl;
+		} catch (error) {
+			console.error('Failed to load model:', error);
+		}
 	}
-	const unsubLoading = modelLoading.subscribe(($modelLoading) => {
-		$modelLoading;
-	});
+	async function handleLoadTransition() {
+		const url = await getModel();
+		setShowModel(true);
+		if (url) {
+			setModelUrl(url);
+			setTimeout(() => {
+				toggleScreen(false);
+			}, 500);
+		}
+	}
 
 	const unsubScreen = screenValue.subscribe(($screenValue) => {
 		$screenValue.currentPage;
@@ -106,13 +118,12 @@
 
 	onMount(() => {
 		renderUI();
-		renderLever();
+	
 	});
 	onDestroy(() => {
 		unsubScreen();
 		setModelStore([]);
 		setModel(null);
-		unsubLoading();
 	});
 
 	useTask(
@@ -140,17 +151,17 @@
 		{/key}
 	</Window>
 </T>
+{#if lever}
 <T
 	is={leverRef}
 	bind:this={$leverComponent}
 	on:click={() => {
 		handleLoadTransition();
 	}}
+	position.z={-20}
+
+
 >
 	<Lever />
 </T>
-{#key $modelLoading}
-	{#if $modelLoading}
-		<LightSpeed />
-	{/if}
-{/key}
+{/if}

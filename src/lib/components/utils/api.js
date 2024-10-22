@@ -1,6 +1,6 @@
 const API_KEY = import.meta.env.VITE_SKETCHFAB_API_KEY;
 
-export async function getModels(model) {
+export async function fetchModels(model) {
 	const response = await fetch(`https://api.sketchfab.com/v3/models/${model}/download`, {
 		headers: {
 			Authorization: `Token ${API_KEY}`

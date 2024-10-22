@@ -8,8 +8,8 @@
 	import { fade } from '../../utils/responsivityUtils';
 	import { spring } from 'svelte/motion';
 	export let title;
-	export let width = 80;
-	export let height = 80;
+	export let width = 800;
+	export let height = 800;
 </script>
 
 <Flex classParser={tailwindParser} {width} {height} class="flex-col gap-1 p-1" let:reflow >

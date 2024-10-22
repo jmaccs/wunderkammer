@@ -1,26 +1,15 @@
 <script>
 	import { Canvas } from '@threlte/core';
 	import Scene from './Scene.svelte';
-	import * as THREE from 'three'
-	
 
+	import * as THREE from 'three';
+	import { onMount } from 'svelte';
+	let canvasElement;
 </script>
 
-<div class="w-full h-screen flex flex-col sm:flex-row">
 
-
-  
-
-	<div class="flex-grow relative">
+	<Canvas>
 	
-	  <div class="absolute inset-0">
+		<Scene />
 	
-		<Canvas>
-			<Scene />
-		</Canvas>
-	  </div>
-	</div>
-
-
-</div>
-
+	</Canvas>

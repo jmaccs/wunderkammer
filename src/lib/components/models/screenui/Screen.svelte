@@ -5,8 +5,8 @@
     import Circle from './screenui/Circle.svelte'
     import Label from './screenui/Label.svelte'
     export let title
-    export let width = 500
-    export let height = 400
+    export let width = 800
+    export let height = 800
   </script>
   <Flex
     classParser={tailwindParser}

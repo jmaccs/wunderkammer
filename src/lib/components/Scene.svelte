@@ -1,20 +1,22 @@
 <script>
 	import { Pane, Slider, Folder } from 'svelte-tweakpane-ui';
-	import { getModels } from './utils/api.js';
-	import { onMount, onDestroy, tick } from 'svelte';
+
+	import { onMount, onDestroy, tick, afterUpdate } from 'svelte';
 	import { spring, tweened } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
+	import { cubicOut, cubicIn } from 'svelte/easing';
 	import * as THREE from 'three';
-	import { T, useThrelte, extend, useTask } from '@threlte/core';
-	import { scale, fly } from './utils/responsivityUtils.js';
+	import { T, extend, useTask } from '@threlte/core';
+
 	import {
 		Grid,
 		Sky,
 		Stars,
 		interactivity,
 		OrbitControls,
+		transitions,
 		createTransition,
-		useCursor
+		useCursor,
+		Align
 	} from '@threlte/extras';
 	import { DEG2RAD } from 'three/src/math/MathUtils.js';
 	import {
@@ -24,17 +26,17 @@
 		screenValue,
 		toggleScreen,
 		setScreen,
-		
+		model,
+		setShowModel,
+		setModelUrl
 	} from './utils/stores.js';
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
-
+	import Warp from './models/Warp.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
-	import LightSpeed from './models/screenui/LightSpeed.svelte';
-
-	export let selectedModelId = null;
+	import Wunderkammer from './models/Wunderkammer.svelte';
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
 	let modelScale;
@@ -43,35 +45,36 @@
 	let cameraPosition;
 	let cameraRotation;
 	let cameraFov;
-	let macbookPosition;
-	let macbookRotation;
-	let macbookScale = spring(0.015);
+	let macbookScale = spring(1);
 	let rotation;
-	let showWinamp = false;
+	let showModel;
 	let showUi = false;
 	let currentScreen;
+
 	interactivity();
 	extend({
 		OrbitControls
 	});
 
+	const unsubModel = model.subscribe(($model) => {
+		$model;
+	});
 	const unsubMod = modelValues.subscribe(($modelValues) => {
 		modelScale = $modelValues.scale;
 		modelPosition = $modelValues.position;
 		modelRotation = $modelValues.rotation;
+		modelUrl = $modelValues.url;
 	});
 	const unsubCam = cameraValues.subscribe(($cameraValues) => {
 		cameraPosition = $cameraValues.position;
 		cameraRotation = $cameraValues.rotation;
 		cameraFov = $cameraValues.fov;
 	});
-	const unsubMac = macbookValues.subscribe(($macbookValues) => {
-		macbookPosition = $macbookValues.position;
-		macbookRotation = $macbookValues.rotation;
-	});
+
 	const unsubScreen = screenValue.subscribe(($screenValue) => {
 		showUi = $screenValue.screenOpen;
-		// currentScreen = $screenValue.currentScreen;
+		currentScreen = $screenValue.currentScreen;
+		showModel = $screenValue.modelLoaded;
 	});
 
 	$: {
@@ -81,41 +84,44 @@
 			modelRotation
 		});
 	}
-
+	const fade = createTransition((ref) => {
+		if (!ref.transparent) ref.transparent = true;
+		return {
+			tick(t) {
+				ref.opacity = t;
+			},
+			easing: cubicIn,
+			duration: 1200
+		};
+	});
 	async function handleOpenUi() {
 		await tick();
 		if (!showUi) {
 			toggleScreen(true);
-			setScreen('menu')
+			setScreen('menu');
+			setModelUrl(null);
+			setShowModel(false);
 		}
 	}
 
-	// watch(winamp, (winampOpen) => {
-	// 	if (winampOpen === true) {
-	// 		showWinamp = true;
-	// 		console.log('winamp open', winampOpen);
-	// 	} else if (winampOpen === false) {
-	// 		showWinamp = false;
-	// 		console.log('winamp closed', winampOpen);
-	// 	}
-	// });
+	$: {
+		console.log('showmodel:', showModel, 'model url:', modelUrl);
+	}
 	useTask((delta) => {
 		rotation += delta;
 	});
-	onMount(async () => {
-		if (selectedModelId) {
-			modelUrl = await getModels(selectedModelId);
-		}
-	});
+
 	onDestroy(() => {
 		unsubCam();
-		unsubMac();
+
 		unsubMod();
 		unsubScreen();
+
+		unsubModel();
 	});
 </script>
 
-<!-- {#if modelUrl}
+<!-- {#if showModel}
 	<Pane title="Model Controls" position="fixed">
 		<Slider bind:value={modelScale} min={0.001} max={1} step={0.001} label="Scale" />
 		<Folder title="Model Position">
@@ -136,7 +142,6 @@
 	<!-- <LightSpeed /> -->
 
 	<ScreenUi
-		scale={0.02}
 		windowWidth={500}
 		windowHeight={400}
 		on:create={({ cleanup }) => {
@@ -166,39 +171,48 @@
 			cellSize={2}
 		/>
 
-		<Room scale={0.5} rotation.y={-2} transition={scale}></Room>
+		<Room rotation.y={-2} in={fade} out={fade}></Room>
 
-		<Keyboard scale={0.01}/>
+		<Keyboard />
 		<AppleDesktop
-			position={[1.5, 0.33, 1.5]}
-			rotation={macbookRotation}
+			position={[0.3, 0.75, 3]}
+			rotation={[Math.PI / 2, 0, Math.PI / 2]}
 			scale={$macbookScale}
 			on:click={handleOpenUi}
-			on:pointerenter={() => {
-				onPointerEnter();
-				macbookScale.set(0.017);
-			}}
-			on:pointerleave={() => {
-				onPointerLeave();
-				macbookScale.set(0.015);
-			}}
+			on:pointerenter={() => macbookScale.set(1.1)}
+			on:pointerleave={() => macbookScale.set(1)}
+			in={fade}
+			out={fade}
 		/>
 
-		{#if modelUrl}
-			<Model
-				scale={$modelValues.scale}
-				position={$modelValues.position}
-				rotation={$modelValues.rotation}
-				{modelUrl}
-			/>
-		{/if}
-		<T.Mesh position={[1.5, 2, -5]} rotation.y={rotation} castShadow receiveShadow>
-			<T.BoxGeometry args={[1, 2, 1]} />
-			<T.MeshNormalMaterial color="hotpink" />
-		</T.Mesh>
+		<Wunderkammer />
 	</T.Group>
+	{#key $screenValue.url}
+		{#if showModel}
+			<!-- <Warp /> -->
+
+			<Align
+				auto
+				on:align={({ center }) => {
+					console.log('The center of the bounding box is', center);
+				}}
+			>
+				<Model
+					{modelScale}
+					{modelPosition}
+					{modelRotation}
+					{modelUrl}
+					on:create={({ ref, cleanup }) => {
+						cleanup(() => {
+							console.log('room cleanup');
+						});
+					}}
+				/>
+			</Align>
+		{/if}
+	{/key}
 {/if}
-<T.PerspectiveCamera makeDefault position={[-20, 10, 10]} fov={15}>
+<T.PerspectiveCamera makeDefault position={[-30, 20, 10]} fov={30}>
 	<OrbitControls enableZoom={false} enableDamping autoRotateSpeed={0.5} target.y={1.5} />
 </T.PerspectiveCamera>
 <Stars speed={3} />
@@ -210,14 +224,3 @@
 	elevation={0.25}
 	mieCoefficient={0.1}
 />
-
-
-<!-- <T.Mesh position.y={3}>
-	<T.PlaneGeometry />
-	<ImageMaterial
-	  transparent
-	  url={webUrl}
-	  radius={0.1}
-	  zoom={1.1}
-	/>
-</T.Mesh> -->

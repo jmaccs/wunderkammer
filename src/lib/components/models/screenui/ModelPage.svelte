@@ -15,28 +15,9 @@
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
 	import Results from './Results.svelte';
-	import Loading from '../../utils/Loading.svelte';
+	import LightSpeed from './LightSpeed.svelte';
 	import * as THREE from 'three';
 	import { useLoader } from '@threlte/core';
-
-	const loadCubeTexture = () => {
-		return new Promise((resolve, reject) => {
-			const loader = new THREE.CubeTextureLoader();
-			loader.setPath('/img/button/');
-
-			loader.load(
-				['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png'],
-				(loadedTexture) => {
-					resolve(loadedTexture);
-				},
-				undefined,
-				(error) => {
-					console.error('Error loading cube texture:', error);
-					reject(error);
-				}
-			);
-		});
-	};
 
 	export let modelUid;
 	let font;
@@ -87,8 +68,8 @@
 
 {#key $model}
 	{#await modelData}
-		<Loading />
-	{:then modelData}
+<LightSpeed />
+{:then modelData}
 		<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
 			<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
 				<Box class="h-full w-full flex-1">
@@ -139,10 +120,5 @@
 			</Box>
 		</Box>
 	{/await}
-	<!-- {#await loadCubeTexture() then map}
-		<T.Mesh scale.x={$scale} scale.y={$scale} position={[500, 0, 35]}>
-			<T.BoxGeometry args={[100, 100, 2]} />
-			<T.MeshBasicMaterial color="white" {map} />
-		</T.Mesh>
-	{/await} -->
+
 {/key}

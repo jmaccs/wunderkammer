@@ -100,7 +100,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	dispose={false}
 	{...$$restProps}
 	bind:this={$component}
-
+	scale={0.03}
 	position.y={0.5}
 	position.x={2}
 	rotation.y={Math.PI / 2}
@@ -108,7 +108,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}
-		<Float floatIntensity={5} scale={$scale} rotationIntensity={2} rotationSpeed={[1, 0.5, 0.2]}>
+		<Float floatIntensity={5}  rotationIntensity={2} rotationSpeed={[1, 0.5, 0.2]}>
 			<T.Mesh
 				name="B1"
 				castShadow
