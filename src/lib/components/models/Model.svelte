@@ -1,56 +1,71 @@
 <script>
-	import { GLTF, useProgress, Billboard, Text } from '@threlte/extras';
+	import { useGltf, useProgress, Billboard, Text, TransformControls, GLTF } from '@threlte/extras';
 	import { T, useTask } from '@threlte/core';
 	import LightSpeed from './screenui/LightSpeed.svelte';
-	import { createEventDispatcher } from 'svelte';
-	import { onMount } from 'svelte';
+	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+	import { sceneTransform, screenActions } from '../utils/stores';
 
-	export let url;
-	export let position;
-	export let scale;
-	export let rotation;
 	let progressLog;
 	let model;
 	let isLoading = true;
+	let modelScene;
 	const { progress } = useProgress();
 	const dispatch = createEventDispatcher();
+	const ktx = new KTX2Loader();
+
+	const unsubTransform = sceneTransform.subscribe((transform) => {
+		if (transform && transform.url) {
+			isLoading = true;
+		}
+	});
+
 	function handleError(event) {
 		console.error('Error loading model:', event.detail);
 		dispatch('error', event.detail);
+		screenActions.setModelLoadState(false);
 	}
-
-	$: if (url) {
+	function handleLoad() {
+		isLoading = false;
+		dispatch('load');
+		screenActions.setModelLoadState(true);
+	}
+	$: console.log(progress);
+	$: progressLog = (progress * 100).toFixed(2);
+	$: if (progress < 1) {
 		isLoading = true;
 	}
-
-	$: progressLog = ($progress * 100).toFixed(2);
-
-	if (!isLoading) {
-		console.log(model);
-	}
+	onDestroy(() => {
+		unsubTransform();
+	});
 </script>
 
-{#if url}
-	{#if (progress = 1)}
+<T.Group>
+	{#if $sceneTransform.url}
 		<GLTF
-			{url}
-			{position}
-			{scale}
-			{rotation}
+			url={$sceneTransform.url}
 			bind:model
-			on:load={({ detail }) => {
-				isLoading = false;
-				model = detail;  // Get the model directly from the event
-				console.log('Model loaded:', detail);
-				dispatch('load', { model });
-			}}
+			on:load={handleLoad}
 			on:error={handleError}
+		
+			scale={$sceneTransform.scale}
+			rotation={$sceneTransform.rotation}
+			{ktx}
 		/>
+
+		{#if progress < 1}
+			<LightSpeed />
+			<Billboard lockX position.x={-10} position.y={2}>
+				<Text
+					text={`Loading model: ${progressLog}%`}
+					fontSize={1}
+					font={'/fonts/Catrinity.otf'}
+					color="#ffffff"
+				/>
+			</Billboard>
+		{/if}
 	{/if}
-	{#if $progress < 1}
-		<LightSpeed />
-		<Billboard lockZ position.x={-10}>
-			<Text text={`Loading model: ${progressLog}%`} fontSize={2} font={'/fonts/Catrinity.otf'} />
-		</Billboard>
-	{/if}
+</T.Group>
+{#if model}
+	<slot {model} />
 {/if}

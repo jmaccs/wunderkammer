@@ -43,8 +43,7 @@
 
 	let model = null;
 	let isModelLoading = false;
-	export let innerWidth = 600;
-	export let innerHeight = 400;
+
 	let pCamera;
 
 	interactivity();
@@ -69,7 +68,7 @@
 		}
 	});
 	function cleanupModel() {
-		if (model) {
+		if (model && model.scene) {
 			model.traverse((child) => {
 				if (child.geometry) {
 					child.geometry.dispose();
@@ -108,7 +107,7 @@
 	}
 
 	$: {
-		console.log('showmodel:', showModel, 'model url:', modelUrl);
+		console.log('showmodel:', showModel, 'model url:', modelUrl, 'modelref:', model);
 	}
 	useTask(
 		async () => {
@@ -128,8 +127,6 @@
 	<!-- <LightSpeed /> -->
 
 	<ScreenUi
-		windowWidth={innerWidth / 4}
-		windowHeight={innerHeight / 2}
 		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
 				console.log('screen cleanup');
@@ -174,7 +171,7 @@
 		<Wunderkammer />
 	</T.Group>
 
-	{#if $screenState.isModelLoaded && $sceneTransform.url}
+	{#if $sceneTransform.url}
 		<!-- <Pane title="Model Controls" position="fixed">
 		<Slider bind:value={sceneTransform.scale} min={0.001} max={1} step={0.001} label="Scale" />
 		<Folder title="Model Position">
@@ -188,27 +185,24 @@
 			<Slider bind:value={sceneTransform.rotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
 		</Folder>
 	</Pane> -->
-		<Model
-			url={$sceneTransform.url}
-			position={$sceneTransform.position}
-			rotation={$sceneTransform.rotation}
-			scale={$sceneTransform.scale}
-			on:create={({ ref, cleanup }) => {
-				model = ref;
-				cleanup(() => {
-					console.log('Model cleanup initiated');
-				});
-			}}
-			on:load={() => {
-				isModelLoading = false;
-				console.log('Model loaded successfully');
-			}}
-			on:error={(e) => {
-				console.error('Model loading error:', e);
-				isModelLoading = false;
-				modelActions.setModelUrl(null);
-			}}
-		/>
+		<Align auto position={[0, 1, -4]}>
+			<Model
+				on:create={({ ref, cleanup }) => {
+					cleanup(() => {
+						console.log('Model cleanup initiated');
+					});
+				}}
+				on:load={() => {
+					isModelLoading = false;
+					console.log('Model loaded successfully');
+				}}
+				on:error={(e) => {
+					console.error('Model loading error:', e);
+					isModelLoading = false;
+					modelActions.setModelUrl(null);
+				}}
+			/>
+		</Align>
 	{/if}
 {/if}
 <T.PerspectiveCamera
