@@ -7,8 +7,8 @@
 	import Label from './Label.svelte';
 	import { fade } from '../../utils/responsivityUtils';
 	export let title;
-	export let width = 800;
-	export let height = 800;
+	export let width 
+	export let height 
 </script>
 
 <Flex classParser={tailwindParser} {width} {height} class="flex-col gap-1 p-1" let:reflow >
@@ -23,17 +23,17 @@
 		</T.Mesh>
 
 		<Box class="h-10 w-10">
-			<Circle radius={5} color="#FF6057" z={20} />
+			<Circle radius={5} color="#FF6057" z={30} />
 		</Box>
 
 		<Box class="h-10 w-10">
-			<Circle radius={5} color="#FDBD2E" z={20} />
+			<Circle radius={5} color="#FDBD2E" z={30} />
 		</Box>
 		<Box class="h-10 w-10">
-			<Circle radius={5} color="#27C840" z={20} />
+			<Circle radius={5} color="#27C840" z={30} />
 		</Box>
 		<Box class="h-full w-auto flex-1 items-center justify-center">
-			<Label text={title} z={25} fontStyle="semi-bold" fontSize="l" color="#454649" />
+			<Label text={title} z={30} fontStyle="semi-bold" fontSize="l" color="#454649" />
 		</Box>
 	</Box>
 	<Box class="h-auto w-auto flex-1" let:width let:height >

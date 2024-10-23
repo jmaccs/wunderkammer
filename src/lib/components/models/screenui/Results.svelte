@@ -14,8 +14,8 @@
 	export let id;
 	export let index;
 	export let thumbZoom = 0.7;
-	export let width;
-	export let height;
+	export let width = 5;
+	export let height = 4;
 
 	let saturation = 0;
 	const { onPointerEnter, onPointerLeave, hovering } = useCursor();
@@ -80,7 +80,7 @@
 					class="bg-gray-50 p-10 border-black border-2 !aspect-video max-w-full max-h-full divide-y divide-current"
 				>
 					<div>
-						<h1 class="text-gray-800 font-serif text-center text-xl mb-2">{description}</h1>
+						<h1 class="text-gray-800 font-serif text-center text-sm mb-2">{description}</h1>
 					</div>
 					<div class="p-4">
 						<p>{title}</p>
@@ -94,7 +94,7 @@
 		<Label
 			text={title}
 			z={25}
-			fontStyle="semi-bold"
+			
 			fontSize={description ? 'm' : 'l'}
 			color="#FFFFFF"
 		/>

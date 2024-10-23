@@ -1,10 +1,10 @@
 <script>
-	
-import { onDestroy, tick } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import { spring } from 'svelte/motion';
 	import { cubicIn } from 'svelte/easing';
-	import { T, extend, useTask } from '@threlte/core';
-
+	import { T, extend, useTask, useThrelte } from '@threlte/core';
+	import { Pane, Folder, Slider } from 'svelte-tweakpane-ui';
+	import * as THREE from 'three';
 	import {
 		Grid,
 		Sky,
@@ -16,14 +16,13 @@ import { onDestroy, tick } from 'svelte';
 		Align
 	} from '@threlte/extras';
 	import {
-		modelValues,
+		sceneActions,
+		screenActions,
+		modelActions,
+		screenState,
 		cameraValues,
-		screenValue,
-		toggleScreen,
-		setScreen,
-		model,
-		setShowModel,
-		setModelUrl
+		macbookValues,
+		sceneTransform
 	} from './utils/stores.js';
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
@@ -33,9 +32,6 @@ import { onDestroy, tick } from 'svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
-	let modelScale;
-	let modelPosition;
-	let modelRotation;
 	let cameraPosition;
 	let cameraRotation;
 	let cameraFov;
@@ -45,39 +41,51 @@ import { onDestroy, tick } from 'svelte';
 	let showUi = false;
 	let currentScreen;
 
+	let model = null;
+	let isModelLoading = false;
+	export let innerWidth = 600;
+	export let innerHeight = 400;
+	let pCamera;
+
 	interactivity();
 	extend({
 		OrbitControls
 	});
 
-	const unsubModel = model.subscribe(($model) => {
-		$model;
-	});
-	const unsubMod = modelValues.subscribe(($modelValues) => {
-		modelScale = $modelValues.scale;
-		modelPosition = $modelValues.position;
-		modelRotation = $modelValues.rotation;
-		modelUrl = $modelValues.url;
-	});
+	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
+
 	const unsubCam = cameraValues.subscribe(($cameraValues) => {
 		cameraPosition = $cameraValues.position;
 		cameraRotation = $cameraValues.rotation;
 		cameraFov = $cameraValues.fov;
 	});
 
-	const unsubScreen = screenValue.subscribe(($screenValue) => {
-		showUi = $screenValue.screenOpen;
-		currentScreen = $screenValue.currentScreen;
-		showModel = $screenValue.modelLoaded;
+	const unsubScreen = screenState.subscribe(($screenState) => {
+		showUi = $screenState.isOpen;
+		currentScreen = $screenState.currentScreen;
+		showModel = $screenState.isModelLoaded;
+		if (!$screenState.isModelLoaded) {
+			cleanupModel();
+		}
 	});
-
-	$: {
-		modelValues.set({
-			modelScale,
-			modelPosition,
-			modelRotation
-		});
+	function cleanupModel() {
+		if (model) {
+			model.traverse((child) => {
+				if (child.geometry) {
+					child.geometry.dispose();
+				}
+				if (child.material) {
+					if (Array.isArray(child.material)) {
+						child.material.forEach((material) => material.dispose());
+					} else {
+						child.material.dispose();
+					}
+				}
+			});
+			model = null;
+		}
 	}
+
 	const fade = createTransition((ref) => {
 		if (!ref.transparent) ref.transparent = true;
 		return {
@@ -88,57 +96,41 @@ import { onDestroy, tick } from 'svelte';
 			duration: 1200
 		};
 	});
+
 	async function handleOpenUi() {
 		await tick();
 		if (!showUi) {
-			toggleScreen(true);
-			setScreen('menu');
-			setModelUrl(null);
-			setShowModel(false);
+			screenActions.toggleScreen(true);
+			screenActions.setPage('menu');
+			modelActions.setSelectedModel(null);
+			screenActions.setModelLoadState(false);
 		}
 	}
 
 	$: {
 		console.log('showmodel:', showModel, 'model url:', modelUrl);
 	}
-	useTask((delta) => {
-		rotation += delta;
-	});
-
+	useTask(
+		async () => {
+			await tick();
+			renderer.render(scene, camera.current);
+		},
+		{ stage: renderStage }
+	);
 	onDestroy(() => {
 		unsubCam();
 
-		unsubMod();
 		unsubScreen();
-
-		unsubModel();
 	});
 </script>
-
-<!-- {#if showModel}
-	<Pane title="Model Controls" position="fixed">
-		<Slider bind:value={modelScale} min={0.001} max={1} step={0.001} label="Scale" />
-		<Folder title="Model Position">
-			<Slider bind:value={modelPosition[0]} min={-10} max={10} step={0.1} label="X" />
-			<Slider bind:value={modelPosition[1]} min={-10} max={10} step={0.1} label="Y" />
-			<Slider bind:value={modelPosition[2]} min={-10} max={10} step={0.1} label="Z" />
-		</Folder>
-		<Folder title="Model Rotation">
-			<Slider bind:value={modelRotation[0]} min={-Math.PI} max={Math.PI} step={0.1} label="X" />
-			<Slider bind:value={modelRotation[1]} min={-Math.PI} max={Math.PI} step={0.1} label="Y" />
-			<Slider bind:value={modelRotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
-		</Folder>
-	</Pane>
-{/if} -->
-<!-- <PerfMonitor anchorX={'left'} logsPerSecond={30} /> -->
 
 {#if showUi}
 	<!-- <LightSpeed /> -->
 
 	<ScreenUi
-		windowWidth={500}
-		windowHeight={400}
-		on:create={({ cleanup }) => {
+		windowWidth={innerWidth / 4}
+		windowHeight={innerHeight / 2}
+		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
 				console.log('screen cleanup');
 			});
@@ -181,35 +173,58 @@ import { onDestroy, tick } from 'svelte';
 
 		<Wunderkammer />
 	</T.Group>
-	{#key $screenValue.url}
-		{#if showModel}
-			<!-- <Warp /> -->
 
-			<Align
-				auto
-				on:align={({ center }) => {
-					console.log('The center of the bounding box is', center);
-				}}
-			>
-				<Model
-					{modelScale}
-					{modelPosition}
-					{modelRotation}
-					{modelUrl}
-					on:create={({ ref, cleanup }) => {
-						cleanup(() => {
-							console.log('room cleanup');
-						});
-					}}
-				/>
-			</Align>
-		{/if}
-	{/key}
+	{#if $screenState.isModelLoaded && $sceneTransform.url}
+		<!-- <Pane title="Model Controls" position="fixed">
+		<Slider bind:value={sceneTransform.scale} min={0.001} max={1} step={0.001} label="Scale" />
+		<Folder title="Model Position">
+			<Slider bind:value={sceneTransform.position[0]} min={-10} max={10} step={0.1} label="X" />
+			<Slider bind:value={sceneTransform.position[1]} min={-10} max={10} step={0.1} label="Y" />
+			<Slider bind:value={sceneTransform.position[2]} min={-10} max={10} step={0.1} label="Z" />
+		</Folder>
+		<Folder title="Model Rotation">
+			<Slider bind:value={sceneTransform.rotation[0]} min={-Math.PI} max={Math.PI} step={0.1} label="X" />
+			<Slider bind:value={sceneTransform.rotation[1]} min={-Math.PI} max={Math.PI} step={0.1} label="Y" />
+			<Slider bind:value={sceneTransform.rotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
+		</Folder>
+	</Pane> -->
+		<Model
+			url={$sceneTransform.url}
+			position={$sceneTransform.position}
+			rotation={$sceneTransform.rotation}
+			scale={$sceneTransform.scale}
+			on:create={({ ref, cleanup }) => {
+				model = ref;
+				cleanup(() => {
+					console.log('Model cleanup initiated');
+				});
+			}}
+			on:load={() => {
+				isModelLoading = false;
+				console.log('Model loaded successfully');
+			}}
+			on:error={(e) => {
+				console.error('Model loading error:', e);
+				isModelLoading = false;
+				modelActions.setModelUrl(null);
+			}}
+		/>
+	{/if}
 {/if}
-<T.PerspectiveCamera makeDefault position={[-30, 20, 10]} fov={30}>
+<T.PerspectiveCamera
+	ref={pCamera}
+	makeDefault
+	position={[-30, 20, 10]}
+	fov={30}
+	on:create={({ ref, cleanup }) => {
+		cleanup(() => {
+			console.log('Cleaning up Perspective Camera');
+		});
+	}}
+>
 	<OrbitControls enableZoom={false} enableDamping autoRotateSpeed={0.5} target.y={1.5} />
 </T.PerspectiveCamera>
-<Stars speed={3} />
+
 <Sky
 	setEnvironment
 	turbidity={3}
@@ -218,3 +233,4 @@ import { onDestroy, tick } from 'svelte';
 	elevation={0.25}
 	mieCoefficient={0.1}
 />
+<Stars speed={3} />

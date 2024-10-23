@@ -4,7 +4,7 @@
 	import { useReflow } from '@threlte/flex';
 	export let text;
 	export let color = 'white';
-	export let z = 0;
+	export let z = 20;
 	export let anchorX = '50%';
 	export let anchorY = '50%';
 	export let fontSize = 'l';
@@ -21,7 +21,7 @@
 
 <Text
 	font={font}
-	position.z={z}
+	position.z={20}
 	{text}
 	{anchorX}
 	{anchorY}

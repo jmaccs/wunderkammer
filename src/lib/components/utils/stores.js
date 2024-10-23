@@ -1,14 +1,29 @@
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import {  spring } from 'svelte/motion';
 
 
-export const modelValues = writable({
-	scale: 1,
-	position: [0, 1, -4],
-	rotation: [0, 0, 0],
-	url: null
-});
+const initialModelData = {
+	type: 'model',
+	title: null,
+	owner: null,
+	description: null,
+	uid: null,
+	categories: null,
+	thumbnail: null,
+	image : null
+};
+const initialSceneState = {
+    scale: 0.2,
+    position: [0, 3, 0],
+    rotation: [0, 0, 0],
+    url: null  
+};
 
+const initialScreenState = {
+    isOpen: false,
+    currentPage: null,
+    isModelLoaded: false
+};
 export const cameraValues = writable({
 	position: [-15, 6, 10],
 	rotation: [0, 0, 0],
@@ -21,47 +36,87 @@ export const macbookValues = writable({
 	rotation: [Math.PI / 2, 0, Math.PI / 2]
 });
 
-export const screenValue = writable({
-	screenOpen: false,
-	currentPage: null,
-	modelLoaded: false
-});
+export const modelList = writable([]);               
+export const selectedModel = writable(initialModelData);       
+export const sceneTransform = writable(initialSceneState);  
+export const screenState = writable(initialScreenState);
 
 
+export const activeScene = derived(
+    [selectedModel, sceneTransform],
+    ([$selectedModel, $sceneTransform]) => {
+        if (!$selectedModel) return null;
+        return {
+            model: $selectedModel,
+            transform: $sceneTransform
+        };
+    }
+)
 
-export const model = writable(null);
-export const modelsStore = writable([]);
+export const modelActions = {
 
-export function setModelStore(modelList) {
-	if (modelList != null) {
-		modelsStore.set(modelList);
-	} else modelsStore.set(null);
-}
+    setModelList(models) {
+        modelList.set(models ?? []);
+    },
 
+    
+    async setSelectedModel(uid) {
+        if (!uid) {
+            selectedModel.set(null);
+            return;
+        }
 
-export function setScreen(id) {
-	screenValue.update((state) => ({ ...state, currentPage: id }));
-}
-export function setShowModel(bool) {
-	screenValue.update((state) => ({ ...state, modelLoaded: bool }));
-}
-export function toggleScreen(bool) {
-	screenValue.update((state) => ({ ...state, screenOpen: bool }));
-}
+        const unsubscribe = modelList.subscribe(models => {
+            if (!models?.length) return;
+            const foundModel = models.find(model => model.uid === uid);
+			console.log('found model', foundModel)
+            selectedModel.set(foundModel ?? null);
+        });
 
-export async function setModel(uid) {
-	modelsStore.subscribe((models) => {
-		if (!models || models.length === 0) return;
+        unsubscribe();
+    },
 
-		const foundModel = models.find((model) => model.uid === uid);
+    
+    setModelUrl(url) {
+        sceneTransform.update(state => ({ ...state, url }));
+    }
+};
 
-		if (foundModel) {
-			model.set(foundModel);
-		} else if (uid === null) {
-			model.set(null);
-		}
-	});
-}
-export function setModelUrl(url){
-	modelValues.update((state)=>({...state, url : url}))
+export const sceneActions = {
+ 
+    updateTransform({ scale, position, rotation }) {
+        sceneTransform.update(state => ({
+            ...state,
+            ...(scale !== undefined && { scale }),
+            ...(position !== undefined && { position }),
+            ...(rotation !== undefined && { rotation })
+        }));
+    },
+
+   
+    resetTransform() {
+        sceneTransform.set(initialSceneState);
+    }
+};
+export const screenActions = {
+    setPage(pageId) {
+        screenState.update(state => ({ ...state, currentPage: pageId }));
+    },
+
+    setModelLoadState(isLoaded) {
+        screenState.update(state => ({ ...state, isModelLoaded: isLoaded }));
+    },
+
+    toggleScreen(isOpen) {
+        screenState.update(state => ({ ...state, isOpen }));
+    },
+	reset() {
+		screenState.set(initialScreenState)
+	}
+};
+export function resetAllStores() {
+    modelList.set([]);
+    selectedModel.set(null);
+    sceneTransform.set(initialSceneState);
+    screenState.set(initialScreenState);
 }

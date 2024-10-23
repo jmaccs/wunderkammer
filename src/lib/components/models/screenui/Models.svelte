@@ -2,7 +2,7 @@
 	import { Box, useReflow, useDimensions } from '@threlte/flex';
 	import { getAllModels } from '../../utils/api.js';
 	import { onMount } from 'svelte';
-	import { setModelStore } from '../../utils/stores.js';
+	import { modelActions } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
 	import Label from './Label.svelte';
@@ -26,7 +26,7 @@
 		try {
 			const res = await getAllModels();
 			modelList = res;
-			setModelStore(modelList);
+			modelActions.setModelList(modelList)
 
 			isLoading = false;
 		} catch (error) {
@@ -88,7 +88,7 @@
 		/>
 
 		<Box class="h-full w-auto flex-1" order={1}>
-			<Label z={10.1} text={`PAGE: ${page} of ${totalPages}`} />
+			<Label z={20} text={`PAGE: ${page} of ${totalPages}`} />
 		</Box>
 
 		<Button

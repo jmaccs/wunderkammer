@@ -9,122 +9,94 @@
 	import { interactivity, transitions } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { fetchModels } from '../../utils/api';
-
 	import { onMount, onDestroy, tick } from 'svelte';
 	import Models from './Models.svelte';
 	import Window from './Window.svelte';
 	import Menu from './Menu.svelte';
 	import ModelPage from './ModelPage.svelte';
 	import Lever from './Lever.svelte';
-	let triggerAnimation;
-	import {
-		model,
-		screenValue,
-		setScreen,
-		toggleScreen,
-		setModelStore,
-		setModelUrl,
-		setModel,
-		setShowModel
-	} from '../../utils/stores';
+	import { get } from 'svelte/store';  
+	import { modelActions, screenActions, screenState, activeScene, selectedModel } from '../../utils/stores';
+	
 	const uiComponent = forwardEventHandlers();
 	const leverComponent = forwardEventHandlers();
-	export let windowWidth = 400;
-	export let windowHeight = 400;
-	let rows;
-	let columns;
-	let lever = false
+	export let windowWidth;
+	export let windowHeight;
+	let lever = false;
 	let modelUI = false;
-	let selectedModelId;
-	let modelUrl = '';
+	let mounted = false;
 	export const uiRef = new THREE.Group();
 	export const leverRef = new THREE.Group();
+	
 	interactivity();
 	transitions();
+	
 	const userCtx = useThrelteUserContext();
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
-
-	async function handleModel(event) {
-		const id = event.detail.value;
-
-		setScreen(id);
-		await setModel(id);
-		modelUI = true;
-		lever = true
-		
-	}
-
-	function handleMenuChoice(event) {
-		const choice = event.detail.value;
-		setScreen(choice);
-
-		console.log('choice', choice);
-	}
-
-
+	
+	// Render UI positioning
 	const renderUI = () => {
 		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
 		const distanceFromCamera = 1500;
-
 		uiRef.position
 			.copy(camera.current.position)
 			.add(cameraDirection.multiplyScalar(distanceFromCamera));
-
 		uiRef.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
-		// ref.rotation.z = -0.251;
 	};
-
-	// const renderLever = () => {
-	// 	const distanceFromScreen = 350;
-
-	// 	const rightDirection = new THREE.Vector3().crossVectors(
-	// 		camera.current.up,
-	// 		camera.current.getWorldDirection(new THREE.Vector3())
-	// 	);
-
-	// 	leverRef.position.copy(uiRef.position).add(rightDirection.multiplyScalar(distanceFromScreen));
-
-	// 	leverRef.lookAt(
-	// 		camera.current.position.x,
-	// 		camera.current.position.y,
-	// 		camera.current.position.z
-	// 	);
-	// };
+	
+	// Handle model selection
+	async function handleModel(event) {
+		const uid = event.detail.value;
+		await modelActions.setSelectedModel(uid);
+		screenActions.setPage('model-page');
+		modelUI = true;
+		lever = true;
+	}
+	
+	function handleMenuChoice(event) {
+		const choice = event.detail.value;
+		screenActions.setPage(choice);
+	}
+	
+	
 	async function getModel() {
 		try {
-			selectedModelId = $model.uid;
-			console.log('selectedModelId:', selectedModelId);
-			modelUrl = await fetchModels(selectedModelId);
-			return modelUrl;
+			const currentModel = get(selectedModel);
+			if (!currentModel) return null;
+			
+			const url = await fetchModels(currentModel.uid);
+			return url;
 		} catch (error) {
 			console.error('Failed to load model:', error);
+			return null;
 		}
 	}
+	
 	async function handleLoadTransition() {
 		const url = await getModel();
-		setShowModel(true);
 		if (url) {
-			setModelUrl(url);
+			modelActions.setModelUrl(url);
 			setTimeout(() => {
-				toggleScreen(false);
+				screenActions.toggleScreen(false);
 			}, 500);
+			screenActions.setModelLoadState(true);
 		}
 	}
-
-	const unsubScreen = screenValue.subscribe(($screenValue) => {
-		$screenValue.currentPage;
-	});
-
+	function handleKeydown(event) {
+    if (event.key === 'Escape' && $screenState.isOpen) {
+        screenActions.toggleScreen(false);
+    }
+}
 	onMount(() => {
 		renderUI();
+		mounted = true
+	});
 	
-	});
 	onDestroy(() => {
-		unsubScreen();
-		setModelStore([]);
-		setModel(null);
+		modelActions.setModelList([]);
+		screenActions.reset();
 	});
-
+	
 	useTask(
 		async () => {
 			await tick();
@@ -132,35 +104,35 @@
 		},
 		{ stage: renderStage }
 	);
-</script>
+	</script>
+	{#if mounted && $screenState.isOpen}
+	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
+		<Window title="wunderkammer" width={windowWidth} height={windowHeight}>
+			{#key $screenState.currentPage}
+				{#if $screenState.currentPage === 'models'}
+					<Models on:select={handleModel} />
+				{/if}
+	
+				{#if $screenState.currentPage === 'menu'}
+					<Menu on:select={handleMenuChoice} />
+				{/if}
+	
+				{#if $screenState.currentPage === 'model-page' && $selectedModel}
+					<ModelPage />
+				{/if}
+			{/key}
+		</Window>
+	</T>
+	
+	{#if lever}
+		<T
+			is={leverRef}
+			bind:this={$leverComponent}
+			on:click={handleLoadTransition}
+			position.z={-12}
+		>
+			<Lever />
+		</T>
+	{/if}
 
-<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
-	<Window title="wunderkammer" width={windowWidth} height={windowHeight}>
-		{#key $screenValue.currentPage}
-			{#if $screenValue.currentPage === 'models'}
-				<Models on:select={handleModel} />
-			{/if}
-
-			{#if $screenValue.currentPage === 'menu'}
-				<Menu on:select={handleMenuChoice} />
-			{/if}
-			{#if modelUI}
-				<ModelPage modelUid={$screenValue.currentPage} />
-			{/if}
-		{/key}
-	</Window>
-</T>
-{#if lever}
-<T
-	is={leverRef}
-	bind:this={$leverComponent}
-	on:click={() => {
-		handleLoadTransition();
-	}}
-	position.z={-20}
-
-
->
-	<Lever />
-</T>
-{/if}
+	{/if}
