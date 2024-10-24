@@ -6,6 +6,8 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 <script>
 	import * as THREE from 'three';
 	import { T, forwardEventHandlers } from '@threlte/core';
+	import { onMount, onDestroy } from 'svelte';
+	import { wunderkammerRef, propsState } from '../utils/stores.js';
 	import {
 		useGltf,
 		useGltfAnimations,
@@ -16,8 +18,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	interactivity();
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	export const ref = new THREE.Group();
-	let isReverseL = false;
-	let isReverseR = false;
+
 	const suspend = useSuspense();
 
 	const gltf = suspend(useGltf('/models/cabinet-transformed.glb', { useDraco: true }));
@@ -25,38 +26,31 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 
 	const component = forwardEventHandlers();
 
-	export const triggerLAnimation = () => {
+	export const triggerAnimation = () => {
 		const cabinetActionL = $actions['Open Left'];
-
-		if (cabinetActionL) {
-			cabinetActionL.loop = THREE.LoopOnce;
-			cabinetActionL.clampWhenFinished = true;
-			cabinetActionL.paused = false;
-
-			if (isReverseL) {
-				cabinetActionL.timeScale = -cabinetActionL.timeScale;
-			} 
-
-			cabinetActionL.play();
-
-			isReverseL = !isReverseL;
-		}
-	};
-	export const triggerRAnimation = () => {
 		const cabinetActionR = $actions['Open Right'];
-
-		if (cabinetActionR) {
-			if (isReverseR) {
-				cabinetActionR.timeScale = -cabinetActionR.timeScale;
-			} 
+		if (cabinetActionL && cabinetActionR) {
+			cabinetActionL.loop = THREE.LoopOnce;
 			cabinetActionR.loop = THREE.LoopOnce;
+			cabinetActionL.clampWhenFinished = true;
 			cabinetActionR.clampWhenFinished = true;
+			if ($propsState.doorsOpen === true) {
+				cabinetActionL.timeScale = -cabinetActionL.timeScale;
+				cabinetActionR.timeScale = -cabinetActionR.timeScale;
+			} else if ($propsState.doorsOpen === false) {
+				cabinetActionL.timeScale = cabinetActionL.timeScale;
+				cabinetActionR.timeScale = cabinetActionR.timeScale;
+			}
+			cabinetActionL.paused = false;
 			cabinetActionR.paused = false;
 			cabinetActionR.play();
-
-			isReverseR = !isReverseR;
+			cabinetActionL.play();
 		}
 	};
+
+	onMount(() => {
+		wunderkammerRef.set(ref);
+	});
 </script>
 
 <T is={ref} dispose={false} {...$$restProps} bind:this={$component}>
@@ -76,7 +70,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 				position={[-9.36, 18.45, 13.7]}
 				on:pointerenter={onPointerEnter}
 				on:pointerleave={onPointerLeave}
-				on:click={triggerLAnimation}
+				on:click={triggerAnimation}
 			/>
 			<T.Mesh
 				name="Door_R_Baked"
@@ -85,7 +79,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 				position={[8.89, 18.24, 14.07]}
 				on:pointerenter={onPointerEnter}
 				on:pointerleave={onPointerLeave}
-				on:click={triggerRAnimation}
+				on:click={triggerAnimation}
 			/>
 		</T.Group>
 	{:catch error}

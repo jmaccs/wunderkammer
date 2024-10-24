@@ -14,7 +14,7 @@
 	$: headerHeight = Math.max(15, height * 0.08);
 	$: headerWidth = width * 1.002; 
 	$: contentPadding = Math.max(8, width * 0.02);
-	$: fontSize = width < 400 ? 's' : 'm';
+	$: fontSize = width < 400 ? 'm' : 'l';
 	
 	$: headerClass = `h-[${headerHeight}px] w-full items-center justify-start gap-2 px-[${contentPadding}px]`;
 	$: contentClass = `h-auto w-auto flex-1 p-[${contentPadding}px]`;

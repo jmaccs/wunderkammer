@@ -59,8 +59,9 @@
 		await modelActions.setSelectedModel(uid);
 		screenActions.setPage('model-page');
 		modelUI = true;
-		lever = true;
+		
 	}
+
 
 	function handleMenuChoice(event) {
 		const choice = event.detail.value;
@@ -88,7 +89,9 @@
 			screenActions.setModelLoadState(true);
 		}
 	}
-
+	function handleModelSelect() {
+		lever = true;
+	}
 	function handleKeydown(event) {
 		if (event.key === 'Escape' && $screenState.isOpen) {
 			screenActions.toggleScreen(false);
@@ -115,29 +118,30 @@
 </script>
 
 {#if mounted && $screenState.isOpen}
+
 	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
-		
-			<Window title="wunderkammer" width={dimensions.width} height={dimensions.height}>
-				{#key $screenState.currentPage}
-					{#if $screenState.currentPage === 'models'}
-						<Models on:select={handleModel} />
-					{/if}
+		<Window title="wunderkammer" width={dimensions.width} height={dimensions.height} fontSize="">
+			{#key $screenState.currentPage}
+				{#if $screenState.currentPage === 'models'}
+					<Models on:select={handleModel} />
+				{/if}
 
-					{#if $screenState.currentPage === 'menu'}
-						<Menu on:select={handleMenuChoice} />
-					{/if}
+				{#if $screenState.currentPage === 'menu'}
+					<Menu on:select={handleMenuChoice} />
+				{/if}
 
-					{#if $screenState.currentPage === 'model-page' && $selectedModel}
-						<ModelPage />
-					{/if}
-				{/key}
-			</Window>
-	
-	</T>
-
-	{#if lever}
-		<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition} position.z={-12}>
+				{#if $screenState.currentPage === 'model-page' && $selectedModel}
+					<ModelPage on:click={(()=>{handleModelSelect()})}/>
+				{/if}
+			{/key}
+		</Window>
+		{#if lever}
+		<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition}  >
 			<Lever />
 		</T>
 	{/if}
+	</T>
+
+	
+
 {/if}

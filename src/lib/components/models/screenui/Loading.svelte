@@ -1,93 +1,105 @@
-
 <script>
-    import { T } from '@threlte/core';
-    import { Box } from '@threlte/extras';
-    import Label from './Label.svelte';
-    import { logStore } from '../stores/logStore';
+	import { T } from '@threlte/core';
+	import { Box, Flex, tailwindParser } from '@threlte/flex';
+	import { HTML } from '@threlte/extras';
+	import Window from './Window.svelte';
+	import { logStore } from '../../utils/stores.js';
+	import { fade, fly } from 'svelte/transition';
 
-  
-    let logContainer;
+	let logContainer;
 
+	$: visibleLogs = $logStore.slice(-50);
 
-    $: visibleLogs = $logStore.slice(-10).map((log, index) => ({
-        ...log,
-        
-        position: { 
-            x: -45, 
-            y: 45 - (index * 10), 
-            z: 0.1 
-        }
-    }));
+	$: if (logContainer) {
+		logContainer.scrollTop = logContainer.scrollHeight;
+	}
 
- 
-    function formatLogMessage(log) {
-        const timestamp = `[${log.timestamp}]`;
-        const message = log.message;
-        
-        if (log.type === 'progress') {
-            const progress = `${log.progress.toFixed(1)}%`;
-            return `${timestamp} ${message} - ${progress}`;
-        }
-        
-        return `${timestamp} ${message}`;
-    }
-
- 
-    const logColors = {
-        info: '#ffffff',
-        error: '#ff5555',
-        progress: '#4CAF50'
-    };
+	const logColors = {
+		info: '#ffffff',
+		error: '#ff5555',
+		progress: '#4CAF50'
+	};
 </script>
 
-<Box class="h-full w-full flex-1" let:width let:height>
-    <T.Group
-        on:create={({ cleanup }) => {
-            cleanup(() => {
-                console.log('Logger cleanup');
-            });
-        }}
-        bind:this={logContainer}
-    > 
-        <T.Mesh position.z={20}>
-      
-            <T.PlaneGeometry args={[100, 100, 2]} />
-            <T.MeshBasicMaterial 
-                color="#1a1a1a" 
-                transparent={true} 
-                opacity={0.8} 
-            />
+<T.Group>
+	<HTML transform occlude>
+		<div class="logs-container" bind:this={logContainer}>
+			{#each visibleLogs as log (log.id)}
+				<div
+					class="log-entry"
+					class:error={log.type === 'error'}
+					class:progress={log.type === 'progress'}
+					transition:fade={{ duration: 200 }}
+				>
+					<span class="timestamp">{log.timestamp}</span>
 
-         
-            {#if visibleLogs.length > 0}
-                {#each visibleLogs as log (log.id)}
-                    <Label 
-                        position={log.position}
-                        text={formatLogMessage(log)}
-                        color={logColors[log.type]}
-                        fontSize="xl"
-                        anchorX="left" 
-                        maxWidth={90} 
-                    />
+					{#if log.type === 'progress'}
+						<div class="progress-entry">
+							<span>{log.message}</span>
+							<div class="progress-bar">
+								<div class="progress-fill" style="width: {log.progress}%"></div>
+							</div>
+							<span class="progress-value">{log.progress.toFixed(1)}%</span>
+						</div>
+					{:else}
+						<span>{log.message}</span>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</HTML>
+</T.Group>
 
-                    
-                    {#if log.type === 'progress'}
-                        <T.Group position.x={log.position.x + 70} position.y={log.position.y}>
-                            <!-- Progress bar background -->
-                            <T.Mesh>
-                                <T.PlaneGeometry args={[20, 1]} />
-                                <T.MeshBasicMaterial color="#333333" />
-                            </T.Mesh>
-                            
-                          
-                            <T.Mesh position.x={-10 + (log.progress / 10)}>
-                                <T.PlaneGeometry args={[(log.progress / 5), 0.8]} />
-                                <T.MeshBasicMaterial color="#4CAF50" />
-                            </T.Mesh>
-                        </T.Group>
-                    {/if}
-                {/each}
-            {/if}
-        </T.Mesh>
-    </T.Group>
-</Box>
+<style>
+	.logs-container {
+		background: #1a1a1a;
+		border-radius: 4px;
+		padding: 1rem;
+		max-height: 300px;
+		overflow-y: auto;
+		font-family: monospace;
+		color: #e0e0e0;
+	}
+
+	.log-entry {
+		padding: 0.25rem 0;
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+	}
+
+	.timestamp {
+		color: #666;
+		font-size: 0.9em;
+	}
+
+	.error {
+		color: #ff5555;
+	}
+
+	.progress-entry {
+		flex: 1;
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+	}
+
+	.progress-bar {
+		flex: 1;
+		height: 6px;
+		background: #333;
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.progress-fill {
+		height: 100%;
+		background: #4caf50;
+		transition: width 0.3s ease;
+	}
+
+	.progress-value {
+		min-width: 4em;
+		text-align: right;
+	}
+</style>

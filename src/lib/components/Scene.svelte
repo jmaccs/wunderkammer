@@ -5,6 +5,7 @@
 	import { T, extend, useTask, useThrelte } from '@threlte/core';
 	import { Pane, Folder, Slider } from 'svelte-tweakpane-ui';
 	import * as THREE from 'three';
+	import { DEG2RAD } from 'three/src/math/MathUtils.js';
 	import {
 		Grid,
 		Sky,
@@ -16,21 +17,25 @@
 		Align
 	} from '@threlte/extras';
 	import {
-		sceneActions,
 		screenActions,
 		modelActions,
 		screenState,
 		desktop,
+		wunderkammerRef,
 		sceneTransform,
-		cameraControls
+		cameraControls,
+		activeScene,
+		propsState,
+		propsActions
 	} from './utils/stores.js';
-	import AppleDesktop from './models/AppleDesktop.svelte';
+	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
 	import Room from './models/Room.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';
 	import CameraControls from './Camera-Controls.svelte';
+	import Loading from './models/screenui/Loading.svelte';
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
 
@@ -39,7 +44,7 @@
 	let showModel;
 	let showUi = false;
 	let currentScreen;
-
+	let doorsOpen;
 	let model = null;
 	let isModelLoading = false;
 
@@ -56,11 +61,14 @@
 		showUi = $screenState.isOpen;
 		currentScreen = $screenState.currentScreen;
 		showModel = $screenState.isModelLoaded;
+		doorsOpen = $screenState.doorsOpen;
 		if (!$screenState.isModelLoaded) {
 			cleanupModel();
 		}
 	});
-
+	const unsubProps = propsState.subscribe(($propsState) => {
+		doorsOpen = $propsState.doorsOpen;
+	});
 	function cleanupModel() {
 		if (model && model.scene) {
 			model.traverse((child) => {
@@ -110,6 +118,7 @@
 
 	onDestroy(() => {
 		unsubScreen();
+		unsubProps();
 	});
 </script>
 
@@ -143,13 +152,15 @@
 		<Room rotation.y={-2} in={fade} out={fade}></Room>
 
 		<Keyboard on:pointerenter={onPointerEnter} on:pointerleave={onPointerLeave} />
-		<AppleDesktop
-			position={[0.3, 0.75, 3]}
+		<Desktop
+			position={[1, 0.75, 3]}
 			rotation={[Math.PI / 2, 0, Math.PI / 2]}
 			scale={$macbookScale}
 			on:create={(ref) => {
 				$desktop = ref;
-				$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true);
+				if ($cameraControls) {
+					$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true);
+				}
 			}}
 			on:click={() => {
 				if ($desktop) {
@@ -170,10 +181,29 @@
 			out={fade}
 		/>
 
-		<Wunderkammer on:pointerenter={onPointerEnter} on:pointerleave={onPointerLeave} />
+		<Wunderkammer
+			on:click={() => {
+				if ($wunderkammerRef) {
+					if (!doorsOpen) {
+						$cameraControls.rotate(10 * DEG2RAD, 0, true).then(() => {
+							$cameraControls.fitToBox($wunderkammerRef, true);
+							propsActions.setDoors(true);
+						});
+					} else if (doorsOpen) {
+						$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true).then(() => {
+							propsActions.setDoors(false);
+						});
+					}
+				}
+			}}
+			on:pointerenter={onPointerEnter}
+			on:pointerleave={onPointerLeave}
+		/>
 	</T.Group>
 
 	{#if $sceneTransform.url}
+		<Loading />
+
 		<Model
 			on:create={({ ref, cleanup }) => {
 				cleanup(() => {
@@ -202,7 +232,7 @@
 	makeDefault
 	position={[-30, 20, 10]}
 	fov={30}
-	on:create={({ ref, cleanup }) => {
+	on:create={({ pCamera, cleanup }) => {
 		cleanup(() => {
 			console.log('Cleaning up Perspective Camera');
 		});

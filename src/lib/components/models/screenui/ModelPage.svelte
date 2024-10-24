@@ -1,20 +1,21 @@
 <script>
-	import { onDestroy } from 'svelte';
+
 	import { Box } from '@threlte/flex';
 	import { ImageMaterial, createTransition, useCursor } from '@threlte/extras';
 	import Label from './Label.svelte';
-	import { T } from '@threlte/core';
+	import { T, forwardEventHandlers } from '@threlte/core';
 	import { selectedModel } from '../../utils/stores';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
-	
+	import { Group } from 'three';
 	const { onPointerEnter, onPointerLeave, hovering } = useCursor();
 	const scale = spring(0.9);
 	$: scale.set($hovering ? 1 : 0.9);
 	$: saturation = $hovering ? 1 : 0;
-	
+	export const ref = new Group();
 	const animDelay = 10;
 	
+	const component = forwardEventHandlers();
 
 	const scaleTransition = createTransition((ref, { direction }) => ({
 		tick(t) {
@@ -25,9 +26,9 @@
 		easing: direction === 'in' ? cubicOut : cubicIn
 	}));
 	</script>
-	
+
 	{#if $selectedModel}
-		<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
+		<Box class="h-full w-full flex-col items-stretch gap-10 p-10"  bind:this={$component}>
 			<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
 				<Box class="h-full w-full flex-1">
 					<Box class="h-full w-full flex-1" let:width let:height>
@@ -39,6 +40,7 @@
 									console.log('Model cleanup');
 								});
 							}}
+						
 						>
 							<T.Mesh
 								scale.x={(width / 100) * $scale}
@@ -47,6 +49,7 @@
 								position.z={20}
 								on:pointerenter={onPointerEnter}
 								on:pointerleave={onPointerLeave}
+								
 							>
 								<T.PlaneGeometry args={[100, 100, 2]} />
 								<ImageMaterial 

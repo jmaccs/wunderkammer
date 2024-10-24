@@ -1,6 +1,5 @@
 import { writable, derived } from 'svelte/store';
 
-
 const initialModelData = {
 	type: 'model',
 	title: null,
@@ -16,6 +15,7 @@ const initialSceneState = {
 	position: [0, 3, 0],
 	rotation: [0, 0, 0],
 	url: null
+
 };
 
 const initialScreenState = {
@@ -25,14 +25,14 @@ const initialScreenState = {
 	screenSize: {
 		innerWidth: 2000,
 		innerHeight: 2000
-	}
+	},
+	doorsOpen: false
 };
 export const cameraValues = writable({
 	position: [-15, 6, 10],
 	rotation: [0, 0, 0],
 	fov: 40
 });
-
 
 export const modelList = writable([]);
 export const selectedModel = writable(initialModelData);
@@ -82,7 +82,8 @@ export const sceneActions = {
 			...state,
 			...(scale !== undefined && { scale }),
 			...(position !== undefined && { position }),
-			...(rotation !== undefined && { rotation })
+			...(rotation !== undefined && { rotation }),
+		
 		}));
 	},
 
@@ -108,6 +109,7 @@ export const screenActions = {
 			screenSize: { innerWidth: innerWidth, innerHeight: innerHeight }
 		}));
 	},
+
 	reset() {
 		screenState.set(initialScreenState);
 	}
@@ -119,45 +121,64 @@ export function resetAllStores() {
 	screenState.set(initialScreenState);
 }
 
-
 function createLogStore() {
-    const { subscribe, update, set } = writable([]);
-    
-    return {
-        subscribe,
-        addLog: (message) => update(logs => [...logs, {
-            id: Date.now(),
-            timestamp: new Date().toLocaleTimeString(),
-            message,
-            type: 'info',
-        }]),
-        addError: (message) => update(logs => [...logs, {
-            id: Date.now(),
-            timestamp: new Date().toLocaleTimeString(),
-            message,
-            type: 'error',
-        }]),
-        addProgress: (message, progress) => update(logs => [...logs, {
-            id: Date.now(),
-            timestamp: new Date().toLocaleTimeString(),
-            message,
-            progress,
-            type: 'progress',
-        }]),
-        clear: () => set([]),
-        // Optional: Add animation states
-        updateLogPosition: (id, position) => update(logs =>
-            logs.map(log =>
-                log.id === id
-                    ? { ...log, position }
-                    : log
-            )
-        ),
-    };
+	const { subscribe, update, set } = writable([]);
+
+	return {
+		subscribe,
+		addLog: (message) =>
+			update((logs) => [
+				...logs,
+				{
+					id: Date.now(),
+					timestamp: new Date().toLocaleTimeString(),
+					message,
+					type: 'info'
+				}
+			]),
+		addError: (message) =>
+			update((logs) => [
+				...logs,
+				{
+					id: Date.now(),
+					timestamp: new Date().toLocaleTimeString(),
+					message,
+					type: 'error'
+				}
+			]),
+		addProgress: (message, progress) =>
+			update((logs) => [
+				...logs,
+				{
+					id: Date.now(),
+					timestamp: new Date().toLocaleTimeString(),
+					message,
+					progress,
+					type: 'progress'
+				}
+			]),
+		clear: () => set([]),
+		// Optional: Add animation states
+		updateLogPosition: (id, position) =>
+			update((logs) => logs.map((log) => (log.id === id ? { ...log, position } : log)))
+	};
 }
 export const logStore = createLogStore();
 
+export const cameraControls = writable(undefined);
 
-export const cameraControls = writable(undefined)
+export const desktop = writable(undefined);
 
-export const desktop = writable(undefined)
+export const wunderkammerRef = writable(undefined);
+
+const initialPropsData = {
+	doorsOpen: false
+}
+
+export const propsState = writable(initialPropsData);
+
+export const propsActions = {
+	setDoors(isOpen) {
+		propsState.update((state)=> ({...state, doorsOpen: isOpen}))
+	}
+}
