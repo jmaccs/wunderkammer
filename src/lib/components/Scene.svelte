@@ -12,8 +12,7 @@
 		interactivity,
 		OrbitControls,
 		createTransition,
-		useCursor,
-		Align
+		useCursor
 	} from '@threlte/extras';
 	import {
 		sceneActions,
@@ -67,6 +66,7 @@
 			cleanupModel();
 		}
 	});
+
 	function cleanupModel() {
 		if (model && model.scene) {
 			model.traverse((child) => {
@@ -106,9 +106,6 @@
 		}
 	}
 
-	$: {
-		console.log('showmodel:', showModel, 'model url:', modelUrl, 'modelref:', model);
-	}
 	useTask(
 		async () => {
 			await tick();
@@ -116,16 +113,14 @@
 		},
 		{ stage: renderStage }
 	);
+
 	onDestroy(() => {
 		unsubCam();
-
 		unsubScreen();
 	});
 </script>
 
 {#if showUi}
-	<!-- <LightSpeed /> -->
-
 	<ScreenUi
 		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
@@ -133,8 +128,6 @@
 			});
 		}}
 	/>
-
-	<!-- </Float> -->
 {:else if !showUi}
 	<T.Group
 		on:create={({ ref, cleanup }) => {
@@ -156,55 +149,51 @@
 
 		<Room rotation.y={-2} in={fade} out={fade}></Room>
 
-		<Keyboard />
+		<Keyboard on:pointerenter={onPointerEnter} on:pointerleave={onPointerLeave} />
 		<AppleDesktop
 			position={[0.3, 0.75, 3]}
 			rotation={[Math.PI / 2, 0, Math.PI / 2]}
 			scale={$macbookScale}
 			on:click={handleOpenUi}
-			on:pointerenter={() => macbookScale.set(1.1)}
-			on:pointerleave={() => macbookScale.set(1)}
+			on:pointerenter={() => {
+				onPointerEnter();
+				macbookScale.set(1.1);
+			}}
+			on:pointerleave={() => {
+				onPointerLeave();
+				macbookScale.set(1);
+			}}
 			in={fade}
 			out={fade}
 		/>
 
-		<Wunderkammer />
+		<Wunderkammer on:pointerenter={onPointerEnter} on:pointerleave={onPointerLeave} />
 	</T.Group>
 
 	{#if $sceneTransform.url}
-		<!-- <Pane title="Model Controls" position="fixed">
-		<Slider bind:value={sceneTransform.scale} min={0.001} max={1} step={0.001} label="Scale" />
-		<Folder title="Model Position">
-			<Slider bind:value={sceneTransform.position[0]} min={-10} max={10} step={0.1} label="X" />
-			<Slider bind:value={sceneTransform.position[1]} min={-10} max={10} step={0.1} label="Y" />
-			<Slider bind:value={sceneTransform.position[2]} min={-10} max={10} step={0.1} label="Z" />
-		</Folder>
-		<Folder title="Model Rotation">
-			<Slider bind:value={sceneTransform.rotation[0]} min={-Math.PI} max={Math.PI} step={0.1} label="X" />
-			<Slider bind:value={sceneTransform.rotation[1]} min={-Math.PI} max={Math.PI} step={0.1} label="Y" />
-			<Slider bind:value={sceneTransform.rotation[2]} min={-Math.PI} max={Math.PI} step={0.1} label="Z" />
-		</Folder>
-	</Pane> -->
-		<Align auto position={[0, 1, -4]}>
-			<Model
-				on:create={({ ref, cleanup }) => {
-					cleanup(() => {
-						console.log('Model cleanup initiated');
-					});
-				}}
-				on:load={() => {
-					isModelLoading = false;
-					console.log('Model loaded successfully');
-				}}
-				on:error={(e) => {
-					console.error('Model loading error:', e);
-					isModelLoading = false;
-					modelActions.setModelUrl(null);
-				}}
-			/>
-		</Align>
+		<Model
+			on:create={({ ref, cleanup }) => {
+				cleanup(() => {
+					console.log('Model cleanup initiated');
+				});
+			}}
+			on:load={() => {
+				isModelLoading = false;
+				console.log('Model loaded successfully');
+			}}
+			on:error={(e) => {
+				console.error('Model loading error:', e);
+				isModelLoading = false;
+				modelActions.setModelUrl(null);
+			}}
+		>
+			<svelte:fragment let:model let:lodGroup>
+				<!-- Use model or lodGroup as needed -->
+			</svelte:fragment>
+		</Model>
 	{/if}
 {/if}
+
 <T.PerspectiveCamera
 	ref={pCamera}
 	makeDefault

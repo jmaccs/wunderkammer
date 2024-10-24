@@ -1,71 +1,162 @@
 <script>
-	import { useGltf, useProgress, Billboard, Text, TransformControls, GLTF } from '@threlte/extras';
-	import { T, useTask } from '@threlte/core';
-	import LightSpeed from './screenui/LightSpeed.svelte';
-	import { createEventDispatcher, onDestroy } from 'svelte';
-	import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+	import { T } from '@threlte/core';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { sceneTransform, screenActions } from '../utils/stores';
+	import { modelProcessor } from '../utils/modelUtils';
+	import * as THREE from 'three';
 
-	let progressLog;
-	let model;
+	let model = null;
+	let lodGroup = null;
 	let isLoading = true;
-	let modelScene;
-	const { progress } = useProgress();
+	let currentLoadingUrl = null;
+	let mounted = false;
 	const dispatch = createEventDispatcher();
-	const ktx = new KTX2Loader();
+
+	function cleanup() {
+		console.log('Model: Cleaning up resources');
+		try {
+			if (model) {
+				if (model.scene) {
+					model.scene.traverse((child) => {
+						if (child.geometry) {
+							child.geometry.dispose();
+						}
+						if (child.material) {
+							if (Array.isArray(child.material)) {
+								child.material.forEach((material) => material.dispose());
+							} else {
+								child.material.dispose();
+							}
+						}
+					});
+				}
+				model = null;
+			}
+			if (lodGroup) {
+				lodGroup.traverse((child) => {
+					if (child.geometry) {
+						child.geometry.dispose();
+					}
+					if (child.material) {
+						if (Array.isArray(child.material)) {
+							child.material.forEach((material) => material.dispose());
+						} else {
+							child.material.dispose();
+						}
+					}
+				});
+				lodGroup = null;
+			}
+			isLoading = true;
+		} catch (error) {
+			console.error('Model: Error during cleanup:', error);
+		}
+	}
+
+	onMount(() => {
+		console.log('Model: Component mounted');
+		mounted = true;
+	});
 
 	const unsubTransform = sceneTransform.subscribe((transform) => {
-		if (transform && transform.url) {
-			isLoading = true;
+		if (!mounted) return;
+
+		console.log('Model: Scene transform updated', transform);
+		try {
+			if (transform && transform.url) {
+				if (currentLoadingUrl !== transform.url) {
+					cleanup();
+					currentLoadingUrl = transform.url;
+					isLoading = true;
+					loadModel(transform.url);
+				}
+			} else {
+				cleanup();
+				currentLoadingUrl = null;
+			}
+		} catch (error) {
+			console.error('Model: Error handling transform update:', error);
+			handleError(error);
 		}
 	});
 
-	function handleError(event) {
-		console.error('Error loading model:', event.detail);
-		dispatch('error', event.detail);
+	async function loadModel(url) {
+		console.log('Model: Starting model load:', url);
+		try {
+			const processedModel = await modelProcessor.processModel(url, {
+				targetSize: 10,
+				center: true,
+				createLODs: true
+			});
+			
+			if (!mounted) {
+				console.log('Model: Component unmounted during load, aborting');
+				return;
+			}
+
+			if (!processedModel || !processedModel.scene) {
+				throw new Error('Invalid processed model data');
+			}
+			
+			model = processedModel;
+			lodGroup = processedModel.userData.lod;
+			
+			// Apply scene transform settings if they exist
+			if ($sceneTransform.scale) {
+				const scale = new THREE.Vector3($sceneTransform.scale, $sceneTransform.scale, $sceneTransform.scale);
+				model.scene.scale.copy(scale);
+				if (lodGroup) {
+					lodGroup.scale.copy(scale);
+				}
+			}
+			
+			if ($sceneTransform.rotation) {
+				const rotation = new THREE.Euler().copy($sceneTransform.rotation);
+				model.scene.rotation.copy(rotation);
+				if (lodGroup) {
+					lodGroup.rotation.copy(rotation);
+				}
+			}
+			
+			isLoading = false;
+			console.log('Model: Load completed successfully');
+			
+			dispatch('load', { 
+				model,
+				scene: model.scene,
+				animations: model.animations,
+				lodGroup
+			});
+			screenActions.setModelLoadState(true);
+		} catch (error) {
+			console.error('Model: Error loading model:', error);
+			handleError(error);
+		}
+	}
+
+	function handleError(error) {
+		console.error('Model: Error occurred:', error);
+		cleanup();
+		currentLoadingUrl = null;
+		dispatch('error', error);
 		screenActions.setModelLoadState(false);
 	}
-	function handleLoad() {
-		isLoading = false;
-		dispatch('load');
-		screenActions.setModelLoadState(true);
-	}
-	$: console.log(progress);
-	$: progressLog = (progress * 100).toFixed(2);
-	$: if (progress < 1) {
-		isLoading = true;
-	}
+
 	onDestroy(() => {
-		unsubTransform();
+		console.log('Model: Component destroying');
+		mounted = false;
+		cleanup();
+		if (unsubTransform) {
+			unsubTransform();
+		}
 	});
 </script>
 
-<T.Group>
-	{#if $sceneTransform.url}
-		<GLTF
-			url={$sceneTransform.url}
-			bind:model
-			on:load={handleLoad}
-			on:error={handleError}
-		
-			scale={$sceneTransform.scale}
-			rotation={$sceneTransform.rotation}
-			{ktx}
-		/>
-
-		{#if progress < 1}
-			<LightSpeed />
-			<Billboard lockX position.x={-10} position.y={2}>
-				<Text
-					text={`Loading model: ${progressLog}%`}
-					fontSize={1}
-					font={'/fonts/Catrinity.otf'}
-					color="#ffffff"
-				/>
-			</Billboard>
-		{/if}
+{#if model && !isLoading && mounted}
+	{#if lodGroup}
+		<T is={lodGroup} />
+	{:else if model.scene}
+		<T is={model.scene} />
 	{/if}
-</T.Group>
-{#if model}
-	<slot {model} />
+	<slot {model} {lodGroup} />
 {/if}

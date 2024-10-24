@@ -123,3 +123,34 @@ export function resetAllStores() {
 	sceneTransform.set(initialSceneState);
 	screenState.set(initialScreenState);
 }
+
+
+function createLogStore() {
+    const { subscribe, update, set } = writable([]);
+    
+    return {
+        subscribe,
+        addLog: (message) => update(logs => [...logs, {
+            id: Date.now(),
+            timestamp: new Date().toLocaleTimeString(),
+            message,
+            type: 'info'
+        }]),
+        addError: (message) => update(logs => [...logs, {
+            id: Date.now(),
+            timestamp: new Date().toLocaleTimeString(),
+            message,
+            type: 'error'
+        }]),
+        addProgress: (message, progress) => update(logs => [...logs, {
+            id: Date.now(),
+            timestamp: new Date().toLocaleTimeString(),
+            message,
+            progress,
+            type: 'progress'
+        }]),
+        clear: () => set([])
+    };
+}
+
+export const logStore = createLogStore();

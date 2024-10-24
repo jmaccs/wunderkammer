@@ -23,6 +23,7 @@
 		activeScene,
 		selectedModel
 	} from '../../utils/stores';
+	import { calculateResponsiveDimensions } from '../../utils/responsivityUtils';
 
 	const uiComponent = forwardEventHandlers();
 	const leverComponent = forwardEventHandlers();
@@ -32,8 +33,12 @@
 	let mounted = false;
 	export const uiRef = new THREE.Group();
 	export const leverRef = new THREE.Group();
-	$: innerWidth = $screenState.screenSize.innerWidth;
-	$: innerHeight = $screenState.screenSize.innerHeight;
+	
+	$: dimensions = calculateResponsiveDimensions(
+		$screenState.screenSize.innerWidth,
+		$screenState.screenSize.innerHeight
+	);
+
 	interactivity();
 	transitions();
 
@@ -79,17 +84,17 @@
 		const url = await getModel();
 		if (url) {
 			modelActions.setModelUrl(url);
-
 			screenActions.toggleScreen(false);
-
 			screenActions.setModelLoadState(true);
 		}
 	}
+
 	function handleKeydown(event) {
 		if (event.key === 'Escape' && $screenState.isOpen) {
 			screenActions.toggleScreen(false);
 		}
 	}
+
 	onMount(() => {
 		renderUI();
 		mounted = true;
@@ -111,7 +116,11 @@
 
 {#if mounted && $screenState.isOpen}
 	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
-		<Window title="wunderkammer" width={innerWidth/4} height={innerHeight/4}>
+		<Window 
+			title="wunderkammer" 
+			width={dimensions.width} 
+			height={dimensions.height}
+		>
 			{#key $screenState.currentPage}
 				{#if $screenState.currentPage === 'models'}
 					<Models on:select={handleModel} />

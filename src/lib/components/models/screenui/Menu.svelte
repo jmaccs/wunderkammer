@@ -13,21 +13,21 @@ import Results from './Results.svelte';
 	
 export let menuOptions = [
 		{
-			optionName: 'Paintings',
-			optionThumbnail: '/img/paintings.jpg',
+			optionName: 'Models by Institution',
+			optionThumbnail: '/img/fossil.jpg',
 			type: 'menu',
-			id: 'paintings',
-			thumbZoom: 1.5
+			id: 'collections',
+			thumbZoom: 0.5
 		},
 		{
-			optionName: 'Models',
+			optionName: 'All Models',
 			optionThumbnail: '/img/models.jpg',
 			type: 'menu',
 			id: 'models',
 			thumbZoom: 0.3
 		},
 		{
-			optionName: 'Search',
+			optionName: 'Search Models',
 			optionThumbnail: '/img/search.jpg',
 			type: 'menu',
 			id: 'search',
