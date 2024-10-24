@@ -7,21 +7,26 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
   import { Group } from 'three'
   import { T, forwardEventHandlers } from '@threlte/core'
   import { useGltf, useSuspense } from '@threlte/extras'
-
+  import { desktop } from '../utils/stores';
+  import { onMount } from 'svelte';
   export const ref = new Group()
+  export let groupRef = ref
 
   const suspend = useSuspense()
 
   const gltf = suspend(useGltf('/models/AppleDesktop-transformed.glb', { useDraco: true }))
 
   const component = forwardEventHandlers()
+  onMount(() => {
+    desktop.set(groupRef);
+  });
 </script>
 
 <T is={ref} dispose={false} {...$$restProps} bind:this={$component}>
   {#await gltf}
     <slot name="fallback" />
   {:then gltf}
-    <T.Group rotation={[-Math.PI / 2, 0, 0]}>
+    <T.Group rotation={[-Math.PI / 2, 0, 0]} bind:ref={groupRef}>
       <T.Mesh castShadow receiveShadow geometry={gltf.nodes.Object_10.geometry} material={gltf.materials.light_beige} />
       <T.Mesh
         castShadow

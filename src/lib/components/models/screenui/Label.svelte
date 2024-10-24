@@ -11,19 +11,19 @@
 	export let font = `/fonts/Catrinity.otf`;
 	
 	const fontSizes = {
-		xs: 4,
-		s: 6,
-		m: 8,
-		l: 10,
-		xl: 12
+		xs: 1,
+		s: 2,
+		m: 4,
+		l: 6,
+		xl: 8
 	};
 
-	// Simple window width based scaling
+
 	function getScaledSize(size) {
 		const baseSize = fontSizes[size];
 		if (typeof window === 'undefined') return baseSize;
 		
-		// Scale down for smaller screens
+	
 		return window.innerWidth <= 768 ? baseSize * 0.8 : baseSize;
 	}
 

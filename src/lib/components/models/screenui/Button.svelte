@@ -35,7 +35,7 @@
       <T.MeshBasicMaterial color={$hovering ? '#9D9FA3' : '#404550'} />
   
       <Label
-        z={5.1}
+        z={20}
         fontSize="xl"
         {text}
       />

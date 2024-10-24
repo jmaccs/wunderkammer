@@ -101,7 +101,7 @@
 			model = processedModel;
 			lodGroup = processedModel.userData.lod;
 			
-			// Apply scene transform settings if they exist
+		
 			if ($sceneTransform.scale) {
 				const scale = new THREE.Vector3($sceneTransform.scale, $sceneTransform.scale, $sceneTransform.scale);
 				model.scene.scale.copy(scale);

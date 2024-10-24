@@ -84,7 +84,7 @@
 		<Box order={999} class="h-40 w-auto items-center justify-center gap-10">
 			<Button
 				class="h-full w-auto flex-1"
-				z={30}
+				z={20}
 				text="← PREVIOUS PAGE"
 				order={0}
 				on:click={() => {
@@ -93,12 +93,12 @@
 			/>
 
 			<Box class="h-full w-auto flex-1" order={1}>
-				<Label z={30} text={`PAGE: ${page} of ${totalPages}`} />
+				<Label z={20} text={`PAGE: ${page} of ${totalPages}`} />
 			</Box>
 
 			<Button
 				class="h-full w-auto flex-1"
-				z={30}
+				z={20}
 				text="NEXT PAGE →"
 				order={999}
 				on:click={() => {

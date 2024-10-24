@@ -33,7 +33,7 @@
 	let mounted = false;
 	export const uiRef = new THREE.Group();
 	export const leverRef = new THREE.Group();
-	
+
 	$: dimensions = calculateResponsiveDimensions(
 		$screenState.screenSize.innerWidth,
 		$screenState.screenSize.innerHeight
@@ -47,7 +47,7 @@
 
 	const renderUI = () => {
 		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
-		const distanceFromCamera = 1200;
+		const distanceFromCamera = 1000;
 		uiRef.position
 			.copy(camera.current.position)
 			.add(cameraDirection.multiplyScalar(distanceFromCamera));
@@ -116,25 +116,23 @@
 
 {#if mounted && $screenState.isOpen}
 	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
-		<Window 
-			title="wunderkammer" 
-			width={dimensions.width} 
-			height={dimensions.height}
-		>
-			{#key $screenState.currentPage}
-				{#if $screenState.currentPage === 'models'}
-					<Models on:select={handleModel} />
-				{/if}
+		
+			<Window title="wunderkammer" width={dimensions.width} height={dimensions.height}>
+				{#key $screenState.currentPage}
+					{#if $screenState.currentPage === 'models'}
+						<Models on:select={handleModel} />
+					{/if}
 
-				{#if $screenState.currentPage === 'menu'}
-					<Menu on:select={handleMenuChoice} />
-				{/if}
+					{#if $screenState.currentPage === 'menu'}
+						<Menu on:select={handleMenuChoice} />
+					{/if}
 
-				{#if $screenState.currentPage === 'model-page' && $selectedModel}
-					<ModelPage />
-				{/if}
-			{/key}
-		</Window>
+					{#if $screenState.currentPage === 'model-page' && $selectedModel}
+						<ModelPage />
+					{/if}
+				{/key}
+			</Window>
+	
 	</T>
 
 	{#if lever}

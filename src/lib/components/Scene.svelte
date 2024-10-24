@@ -12,16 +12,17 @@
 		interactivity,
 		OrbitControls,
 		createTransition,
-		useCursor
+		useCursor,
+		Align
 	} from '@threlte/extras';
 	import {
 		sceneActions,
 		screenActions,
 		modelActions,
 		screenState,
-		cameraValues,
-		macbookValues,
-		sceneTransform
+		desktop,
+		sceneTransform,
+		cameraControls
 	} from './utils/stores.js';
 	import AppleDesktop from './models/AppleDesktop.svelte';
 	import Model from './models/Model.svelte';
@@ -29,11 +30,10 @@
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Keyboard from './models/Keyboard.svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';
+	import CameraControls from './Camera-Controls.svelte';
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
-	let cameraPosition;
-	let cameraRotation;
-	let cameraFov;
+
 	let macbookScale = spring(1);
 	let rotation;
 	let showModel;
@@ -51,12 +51,6 @@
 	});
 
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
-
-	const unsubCam = cameraValues.subscribe(($cameraValues) => {
-		cameraPosition = $cameraValues.position;
-		cameraRotation = $cameraValues.rotation;
-		cameraFov = $cameraValues.fov;
-	});
 
 	const unsubScreen = screenState.subscribe(($screenState) => {
 		showUi = $screenState.isOpen;
@@ -115,7 +109,6 @@
 	);
 
 	onDestroy(() => {
-		unsubCam();
 		unsubScreen();
 	});
 </script>
@@ -154,7 +147,17 @@
 			position={[0.3, 0.75, 3]}
 			rotation={[Math.PI / 2, 0, Math.PI / 2]}
 			scale={$macbookScale}
-			on:click={handleOpenUi}
+			on:create={(ref) => {
+				$desktop = ref;
+				$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true);
+			}}
+			on:click={() => {
+				if ($desktop) {
+					$cameraControls.fitToBox($desktop, true).then(() => {
+						handleOpenUi();
+					});
+				}
+			}}
 			on:pointerenter={() => {
 				onPointerEnter();
 				macbookScale.set(1.1);
@@ -205,7 +208,11 @@
 		});
 	}}
 >
-	<OrbitControls enableZoom={false} enableDamping autoRotateSpeed={0.5} target.y={1.5} />
+	<CameraControls
+		on:create={({ ref }) => {
+			$cameraControls = ref;
+		}}
+	/>
 </T.PerspectiveCamera>
 
 <Sky

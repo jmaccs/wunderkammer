@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import { spring } from 'svelte/motion';
+
 
 const initialModelData = {
 	type: 'model',
@@ -33,11 +33,6 @@ export const cameraValues = writable({
 	fov: 40
 });
 
-export const macbookValues = writable({
-	position: [0.3, 0.7, 3],
-	scale: spring(1),
-	rotation: [Math.PI / 2, 0, Math.PI / 2]
-});
 
 export const modelList = writable([]);
 export const selectedModel = writable(initialModelData);
@@ -134,23 +129,35 @@ function createLogStore() {
             id: Date.now(),
             timestamp: new Date().toLocaleTimeString(),
             message,
-            type: 'info'
+            type: 'info',
         }]),
         addError: (message) => update(logs => [...logs, {
             id: Date.now(),
             timestamp: new Date().toLocaleTimeString(),
             message,
-            type: 'error'
+            type: 'error',
         }]),
         addProgress: (message, progress) => update(logs => [...logs, {
             id: Date.now(),
             timestamp: new Date().toLocaleTimeString(),
             message,
             progress,
-            type: 'progress'
+            type: 'progress',
         }]),
-        clear: () => set([])
+        clear: () => set([]),
+        // Optional: Add animation states
+        updateLogPosition: (id, position) => update(logs =>
+            logs.map(log =>
+                log.id === id
+                    ? { ...log, position }
+                    : log
+            )
+        ),
     };
 }
-
 export const logStore = createLogStore();
+
+
+export const cameraControls = writable(undefined)
+
+export const desktop = writable(undefined)
