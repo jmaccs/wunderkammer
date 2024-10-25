@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { SimplifyModifier } from 'three/examples/jsm/modifiers/SimplifyModifier.js';
 import { logStore } from './stores';
+
 export class ModelProcessor {
 	constructor() {
 		this.loader = new GLTFLoader();
 		this.cache = new Map();
-		this.simplifyModifier = new SimplifyModifier();
+
 		console.log('ModelProcessor initialized');
 		logStore.addLog('ModelProcessor initialized');
 	}
@@ -17,11 +17,11 @@ export class ModelProcessor {
 			logStore.addError('ModelProcessor: No URL provided');
 			throw new Error('No URL provided');
 		}
+		let truncatedUrl = url.slice(15) + '...';
+		console.log(`ModelProcessor: Processing model from ${truncatedUrl}`);
+		logStore.addLog(`ModelProcessor: Processing model from ${truncatedUrl}`);
 
-		console.log(`ModelProcessor: Processing model from ${url}`);
-		logStore.addLog(`ModelProcessor: Processing model from ${url}`);
-
-		const { targetSize = 10, center = true, createLODs = true } = options;
+		const { targetSize = 10, center = true } = options;
 
 		try {
 			if (this.cache.has(url)) {
@@ -40,16 +40,14 @@ export class ModelProcessor {
 
 			const processedModel = this.normalizeModel(gltf, { targetSize, center });
 
-			if (createLODs) {
-				try {
-					processedModel.userData.lod = this.createLODGroup(processedModel.scene);
-					console.log('ModelProcessor: LOD levels created successfully');
-					logStore.addLog('ModelProcessor: LOD levels created successfully');
-				} catch (error) {
-					console.warn('ModelProcessor: Failed to create LOD levels', error);
-					logStore.addError('ModelProcessor: Failed to create LOD levels', error);
+			// Ensure materials are properly set up
+			this.traverseMeshes(processedModel.scene, (mesh) => {
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+				if (mesh.material) {
+					mesh.material.needsUpdate = true;
 				}
-			}
+			});
 
 			this.cache.set(url, processedModel);
 			return processedModel;
@@ -98,11 +96,13 @@ export class ModelProcessor {
 		try {
 			const scene = gltf.scene;
 
-			const box = new THREE.Box3().setFromObject(scene);
-			if (!box.isBox3) {
-				throw new Error('Failed to calculate bounding box');
-			}
+			// Reset transformations
+			scene.position.set(0, 0, 0);
+			scene.rotation.set(0, 0, 0);
+			scene.scale.set(1, 1, 1);
+			scene.updateMatrix();
 
+			const box = new THREE.Box3().setFromObject(scene);
 			const size = box.getSize(new THREE.Vector3());
 			const maxDimension = Math.max(size.x, size.y, size.z);
 
@@ -112,14 +112,20 @@ export class ModelProcessor {
 				return gltf;
 			}
 
+			
 			const scale = targetSize / maxDimension;
-			scene.scale.multiplyScalar(scale);
+			scene.scale.set(scale, scale, scale);
 
 			if (center) {
 				const center = box.getCenter(new THREE.Vector3());
-				scene.position.sub(center);
+				scene.position.copy(center).multiplyScalar(-scale);
 			}
 
+			
+			scene.updateMatrix();
+			scene.updateMatrixWorld(true);
+
+	
 			box.setFromObject(scene);
 
 			gltf.userData = {
@@ -136,93 +142,6 @@ export class ModelProcessor {
 			console.error('ModelProcessor: Error normalizing model:', error);
 			logStore.addError('ModelProcessor: Error normalizing model:', error);
 			throw error;
-		}
-	}
-
-	createLODGroup(originalScene) {
-		if (!originalScene) {
-			console.error('ModelProcessor: No scene provided for LOD creation');
-			logStore.addError('ModelProcessor: No scene provided for LOD creation');
-			throw new Error('No scene provided for LOD creation');
-		}
-
-		try {
-			const lodGroup = new THREE.LOD();
-
-			const highDetail = originalScene.clone();
-			lodGroup.addLevel(highDetail, 0);
-			console.log('ModelProcessor: High detail LOD created');
-			logStore.addLog('ModelProcessor: High detail LOD created');
-
-			let hasValidMeshes = false;
-
-			this.traverseMeshes(originalScene, (mesh) => {
-				if (mesh.geometry && mesh.geometry.isBufferGeometry) {
-					hasValidMeshes = true;
-					try {
-						const lowMesh = this.createSimplifiedMesh(mesh, 0.25);
-						if (lowMesh) {
-							const lowLOD = new THREE.LOD();
-							lowLOD.addLevel(lowMesh, 150);
-							lodGroup.addLevel(lowLOD, 150);
-							console.log('ModelProcessor: Low detail LOD created');
-							logStore.addLog('ModelProcessor: Low detail LOD created');
-						}
-					} catch (error) {
-						console.warn('ModelProcessor: Failed to create LOD for mesh:', error);
-						logStore.addError('ModelProcessor: Failed to create LOD for mesh:', error);
-					}
-				}
-			});
-
-			if (!hasValidMeshes) {
-				console.warn('ModelProcessor: No valid meshes found for LOD creation');
-				logStore.addError('ModelProcessor: No valid meshes found for LOD creation');
-				return null;
-			}
-
-			return lodGroup;
-		} catch (error) {
-			console.error('ModelProcessor: Error creating LOD group:', error);
-			logStore.addError('ModelProcessor: Error creating LOD group:', error);
-			return null;
-		}
-	}
-
-	createSimplifiedMesh(originalMesh, reduction) {
-		if (!originalMesh || !originalMesh.geometry || !originalMesh.geometry.isBufferGeometry) {
-			console.warn('ModelProcessor: Invalid mesh for simplification');
-			return null;
-		}
-
-		try {
-			const geometry = originalMesh.geometry.clone();
-
-			const originalVertexCount = geometry.attributes.position.count;
-			const targetVertexCount = Math.floor(originalVertexCount * reduction);
-			const vertexReduction = originalVertexCount - targetVertexCount;
-
-			if (vertexReduction <= 0) {
-				console.warn('ModelProcessor: No vertex reduction needed');
-				logStore.addError('ModelProcessor: No vertex reduction needed');
-				return null;
-			}
-
-			const simplified = this.simplifyModifier.modify(geometry, vertexReduction);
-
-			const simplifiedMesh = new THREE.Mesh(simplified, originalMesh.material.clone());
-
-			simplifiedMesh.position.copy(originalMesh.position);
-			simplifiedMesh.rotation.copy(originalMesh.rotation);
-			simplifiedMesh.scale.copy(originalMesh.scale);
-
-			console.log(`ModelProcessor: Mesh simplified to ${reduction * 100}%`);
-			logStore.addProgress(`ModelProcessor: Mesh simplified to ${reduction * 100}%`);
-			return simplifiedMesh;
-		} catch (error) {
-			console.warn('ModelProcessor: Failed to create simplified mesh:', error);
-			logStore.addError('ModelProcessor: Failed to create simplified mesh:', error);
-			return null;
 		}
 	}
 

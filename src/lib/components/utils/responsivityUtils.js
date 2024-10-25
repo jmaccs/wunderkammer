@@ -18,7 +18,7 @@ export const fade = createTransition((ref) => {
 export const scale = createTransition((ref) => {
     return {
         tick(t) {
-            // t is [0,1] and needs to be converted to [0.5,1]
+            
             t = 0.5 + t * 0.5;
             ref.scale.set(t, t, t);
         },

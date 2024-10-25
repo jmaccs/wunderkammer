@@ -26,7 +26,7 @@
 		cameraControls,
 		activeScene,
 		propsState,
-		propsActions
+		propsActions,
 	} from './utils/stores.js';
 	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
@@ -35,7 +35,7 @@
 	import Keyboard from './models/Keyboard.svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';
 	import CameraControls from './Camera-Controls.svelte';
-	import Loading from './models/screenui/Loading.svelte';
+
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
 	let modelUrl = '';
 
@@ -107,7 +107,7 @@
 			screenActions.setModelLoadState(false);
 		}
 	}
-
+	
 	useTask(
 		async () => {
 			await tick();
@@ -199,32 +199,30 @@
 			on:pointerenter={onPointerEnter}
 			on:pointerleave={onPointerLeave}
 		/>
+
+		{#if $sceneTransform.url}
+			<T.Group position.y={1}>
+				<Model
+					on:create={({ ref, cleanup }) => {
+						cleanup(() => {
+							console.log('Model cleanup initiated');
+						});
+					}}
+					on:load={({ detail }) => {
+						isModelLoading = false;
+						model = detail.model;
+						console.log('Model loaded successfully');
+						invalidate();
+					}}
+					on:error={(e) => {
+						console.error('Model loading error:', e);
+						isModelLoading = false;
+						modelActions.setModelUrl(null);
+					}}
+				/>
+			</T.Group>
+		{/if}
 	</T.Group>
-
-	{#if $sceneTransform.url}
-		<Loading />
-
-		<Model
-			on:create={({ ref, cleanup }) => {
-				cleanup(() => {
-					console.log('Model cleanup initiated');
-				});
-			}}
-			on:load={() => {
-				isModelLoading = false;
-				console.log('Model loaded successfully');
-			}}
-			on:error={(e) => {
-				console.error('Model loading error:', e);
-				isModelLoading = false;
-				modelActions.setModelUrl(null);
-			}}
-		>
-			<svelte:fragment let:model let:lodGroup>
-				<!-- Use model or lodGroup as needed -->
-			</svelte:fragment>
-		</Model>
-	{/if}
 {/if}
 
 <T.PerspectiveCamera

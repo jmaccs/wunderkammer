@@ -6,10 +6,10 @@
 	import * as THREE from 'three';
 
 	let model = null;
-	let lodGroup = null;
 	let isLoading = true;
 	let currentLoadingUrl = null;
 	let mounted = false;
+	let modelReady = false;
 	const dispatch = createEventDispatcher();
 
 	function cleanup() {
@@ -22,32 +22,14 @@
 							child.geometry.dispose();
 						}
 						if (child.material) {
-							if (Array.isArray(child.material)) {
-								child.material.forEach((material) => material.dispose());
-							} else {
-								child.material.dispose();
-							}
+							child.material.dispose();
 						}
 					});
 				}
 				model = null;
 			}
-			if (lodGroup) {
-				lodGroup.traverse((child) => {
-					if (child.geometry) {
-						child.geometry.dispose();
-					}
-					if (child.material) {
-						if (Array.isArray(child.material)) {
-							child.material.forEach((material) => material.dispose());
-						} else {
-							child.material.dispose();
-						}
-					}
-				});
-				lodGroup = null;
-			}
 			isLoading = true;
+			modelReady = false;
 		} catch (error) {
 			console.error('Model: Error during cleanup:', error);
 		}
@@ -85,10 +67,9 @@
 		try {
 			const processedModel = await modelProcessor.processModel(url, {
 				targetSize: 10,
-				center: true,
-				createLODs: true
+				center: true
 			});
-			
+
 			if (!mounted) {
 				console.log('Model: Component unmounted during load, aborting');
 				return;
@@ -97,35 +78,25 @@
 			if (!processedModel || !processedModel.scene) {
 				throw new Error('Invalid processed model data');
 			}
-			
+
 			model = processedModel;
-			lodGroup = processedModel.userData.lod;
 			
-		
+			// Apply transformations to the scene directly
 			if ($sceneTransform.scale) {
-				const scale = new THREE.Vector3($sceneTransform.scale, $sceneTransform.scale, $sceneTransform.scale);
-				model.scene.scale.copy(scale);
-				if (lodGroup) {
-					lodGroup.scale.copy(scale);
-				}
+				model.scene.scale.set(
+					$sceneTransform.scale,
+					$sceneTransform.scale,
+					$sceneTransform.scale
+				);
 			}
-			
-			if ($sceneTransform.rotation) {
-				const rotation = new THREE.Euler().copy($sceneTransform.rotation);
-				model.scene.rotation.copy(rotation);
-				if (lodGroup) {
-					lodGroup.rotation.copy(rotation);
-				}
-			}
-			
+
 			isLoading = false;
-			console.log('Model: Load completed successfully');
-			
-			dispatch('load', { 
+			modelReady = true;
+			console.log('Model: load completed successfully');
+
+			dispatch('load', {
 				model,
-				scene: model.scene,
-				animations: model.animations,
-				lodGroup
+				scene: model.scene
 			});
 			screenActions.setModelLoadState(true);
 		} catch (error) {
@@ -150,13 +121,16 @@
 			unsubTransform();
 		}
 	});
+
+	$: if (model && model.scene) {
+		model.scene.updateMatrixWorld(true);
+	}
 </script>
 
-{#if model && !isLoading && mounted}
-	{#if lodGroup}
-		<T is={lodGroup} />
-	{:else if model.scene}
-		<T is={model.scene} />
-	{/if}
-	<slot {model} {lodGroup} />
+{#if model && !isLoading && mounted && modelReady}
+	<T.Group>
+		<T.Mesh>
+			<T is={model.scene} />
+		</T.Mesh>
+	</T.Group>
 {/if}

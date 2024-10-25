@@ -26,9 +26,9 @@
 		easing: direction === 'in' ? cubicOut : cubicIn
 	}));
 	</script>
-
+	
 	{#if $selectedModel}
-		<Box class="h-full w-full flex-col items-stretch gap-10 p-10"  bind:this={$component}>
+		<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
 			<Box class="h-auto w-full flex-1 items-center justify-evenly gap-10">
 				<Box class="h-full w-full flex-1">
 					<Box class="h-full w-full flex-1" let:width let:height>
@@ -40,7 +40,8 @@
 									console.log('Model cleanup');
 								});
 							}}
-						
+							bind:this={$component}
+							{...$$restProps}
 						>
 							<T.Mesh
 								scale.x={(width / 100) * $scale}

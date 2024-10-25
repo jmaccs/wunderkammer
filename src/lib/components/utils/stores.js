@@ -11,7 +11,7 @@ const initialModelData = {
 	image: null
 };
 const initialSceneState = {
-	scale: 0.2,
+	scale: 1,
 	position: [0, 3, 0],
 	rotation: [0, 0, 0],
 	url: null
@@ -123,6 +123,7 @@ export function resetAllStores() {
 
 function createLogStore() {
 	const { subscribe, update, set } = writable([]);
+	let logIndex = 0;
 
 	return {
 		subscribe,
@@ -130,7 +131,7 @@ function createLogStore() {
 			update((logs) => [
 				...logs,
 				{
-					id: Date.now(),
+					id: `${logIndex++}_${Date.now()}`,
 					timestamp: new Date().toLocaleTimeString(),
 					message,
 					type: 'info'
@@ -140,7 +141,7 @@ function createLogStore() {
 			update((logs) => [
 				...logs,
 				{
-					id: Date.now(),
+					id: `${logIndex++}_${Date.now()}`,
 					timestamp: new Date().toLocaleTimeString(),
 					message,
 					type: 'error'
@@ -150,15 +151,17 @@ function createLogStore() {
 			update((logs) => [
 				...logs,
 				{
-					id: Date.now(),
+					id: `${logIndex++}_${Date.now()}`,
 					timestamp: new Date().toLocaleTimeString(),
 					message,
 					progress,
 					type: 'progress'
 				}
 			]),
-		clear: () => set([]),
-		// Optional: Add animation states
+		clear: () => {
+			logIndex = 0;
+			set([]);
+		},
 		updateLogPosition: (id, position) =>
 			update((logs) => logs.map((log) => (log.id === id ? { ...log, position } : log)))
 	};

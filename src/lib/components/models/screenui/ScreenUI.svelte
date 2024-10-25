@@ -59,9 +59,7 @@
 		await modelActions.setSelectedModel(uid);
 		screenActions.setPage('model-page');
 		modelUI = true;
-		
 	}
-
 
 	function handleMenuChoice(event) {
 		const choice = event.detail.value;
@@ -91,7 +89,28 @@
 	}
 	function handleModelSelect() {
 		lever = true;
+		renderLever();
 	}
+	const renderLever = () => {
+		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
+		const cameraRight = new THREE.Vector3();
+		cameraRight.crossVectors(cameraDirection, camera.current.up).normalize();
+
+		const distanceFromCamera = 15;
+		const leftOffset = -5;
+
+		leverRef.position
+			.copy(camera.current.position)
+			.add(cameraDirection.multiplyScalar(distanceFromCamera));
+
+		leverRef.position.add(cameraRight.multiplyScalar(leftOffset));
+
+		leverRef.lookAt(
+			camera.current.position.x,
+			camera.current.position.y,
+			camera.current.position.z
+		);
+	};
 	function handleKeydown(event) {
 		if (event.key === 'Escape' && $screenState.isOpen) {
 			screenActions.toggleScreen(false);
@@ -118,7 +137,6 @@
 </script>
 
 {#if mounted && $screenState.isOpen}
-
 	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
 		<Window title="wunderkammer" width={dimensions.width} height={dimensions.height} fontSize="">
 			{#key $screenState.currentPage}
@@ -131,17 +149,19 @@
 				{/if}
 
 				{#if $screenState.currentPage === 'model-page' && $selectedModel}
-					<ModelPage on:click={(()=>{handleModelSelect()})}/>
+					<ModelPage
+						on:click={() => {
+							handleModelSelect();
+						}}
+					/>
 				{/if}
 			{/key}
 		</Window>
-		{#if lever}
-		<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition}  >
+	</T>
+
+	{#if lever}
+		<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition}>
 			<Lever />
 		</T>
 	{/if}
-	</T>
-
-	
-
 {/if}

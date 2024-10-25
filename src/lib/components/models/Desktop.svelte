@@ -9,8 +9,6 @@ Command: npx @threlte/gltf@2.0.3 static/models/Desktop.glb -T -k
 	import { Align, useGltf } from '@threlte/extras';
 	import { desktop } from '../utils/stores';
 	import { onMount } from 'svelte';
-	import Window from './screenui/Window.svelte';
-	import Loading from './screenui/Loading.svelte';
 	export const ref = new Group();
 
 	const gltf = useGltf('/models/Desktop-transformed.glb', { useDraco: true });
