@@ -19,11 +19,19 @@ Command: npx @threlte/gltf@2.0.3 static/models/Desktop.glb -T -k
 	});
 </script>
 
-<T is={ref} dispose={false} {...$$restProps} bind:this={$component}>
+<T
+	is={ref}
+	dispose={false}
+	{...$$restProps}
+	bind:this={$component}
+	scale={4}
+	position={[0, 3, 15]}
+	rotation.y={-Math.PI / 2}
+>
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}
-		<T.Group name="Sketchfab_model" position={[-0.03, 0.33, 0]} rotation.x={-Math.PI / 2}>
+		<T.Group name="Sketchfab_model">
 			<T.Mesh
 				name="Object_10"
 				geometry={gltf.nodes.Object_10.geometry}
@@ -64,16 +72,12 @@ Command: npx @threlte/gltf@2.0.3 static/models/Desktop.glb -T -k
 				geometry={gltf.nodes.Object_9.geometry}
 				material={gltf.materials.darkest_beige}
 			/>
-	
-				<T.Mesh
-					name="Screen"
-					geometry={gltf.nodes.Screen.geometry}
-					material={gltf.materials.dark_grey}
-				>
-				
-				</T.Mesh>
-        
-			
+
+			<T.Mesh
+				name="Screen"
+				geometry={gltf.nodes.Screen.geometry}
+				material={gltf.materials.dark_grey}
+			></T.Mesh>
 		</T.Group>
 	{:catch error}
 		<slot name="error" {error} />

@@ -4,6 +4,7 @@
 	import { sceneTransform, screenActions } from '../utils/stores';
 	import { modelProcessor } from '../utils/modelUtils';
 	import * as THREE from 'three';
+	import {TransformControls} from '@threlte/extras';
 
 	let model = null;
 	let isLoading = true;
@@ -11,7 +12,7 @@
 	let mounted = false;
 	let modelReady = false;
 	const dispatch = createEventDispatcher();
-
+	export const ref = new THREE.Group();
 	function cleanup() {
 		console.log('Model: Cleaning up resources');
 		try {
@@ -128,9 +129,11 @@
 </script>
 
 {#if model && !isLoading && mounted && modelReady}
-	<T.Group>
+
+	<T.Group is={ref} dispose={false} {...$$restProps} >
 		<T.Mesh>
 			<T is={model.scene} />
 		</T.Mesh>
 	</T.Group>
+
 {/if}

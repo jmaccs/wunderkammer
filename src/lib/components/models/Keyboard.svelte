@@ -98,7 +98,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	dispose={false}
 	{...$$restProps}
 	bind:this={$component}
-	scale={0.03}
+
 	position.y={0.5}
 	position.x={2}
 	rotation.y={Math.PI / 2}

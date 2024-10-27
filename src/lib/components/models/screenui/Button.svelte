@@ -8,7 +8,7 @@
   
     let _class
     export { _class as class }
-    export let z = 0
+
     export let text = ''
     export let order= undefined
     
@@ -23,7 +23,7 @@
   >
     <T.Mesh
       bind:this={$component}
-      position.z={z}
+      position.z={10}
       on:click={(e) => e.stopPropagation()}
       on:pointerenter={onPointerEnter}
       on:pointerleave={onPointerLeave}
@@ -35,8 +35,8 @@
       <T.MeshBasicMaterial color={$hovering ? '#9D9FA3' : '#404550'} />
   
       <Label
-        z={20}
-        fontSize="xl"
+        z={5}
+        fontSize="s"
         {text}
       />
     </T.Mesh>

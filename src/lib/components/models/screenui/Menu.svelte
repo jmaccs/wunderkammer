@@ -17,7 +17,7 @@ export let menuOptions = [
 			optionThumbnail: '/img/fossil.jpg',
 			type: 'menu',
 			id: 'collections',
-			thumbZoom: 0.5
+			thumbZoom: 0.9
 		},
 		{
 			optionName: 'All Models',
@@ -63,7 +63,7 @@ export let menuOptions = [
 	});
 </script>
 
-<Box class="h-full w-full flex-col items-stretch gap-10 p-10">
+<Box class="h-full w-full flex-grid-cols-2  gap-10 p-10">
 	{#each menuOptions as option, i (option.id)}
 		{@const index = i}
 		{@const description = null}

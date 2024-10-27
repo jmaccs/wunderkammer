@@ -14,8 +14,13 @@
 	export let id;
 	export let index;
 	export let thumbZoom = 0.7;
-	export let width = 5;
-	export let height = 4;
+	export let width;
+	export let height;
+
+	$: boxSize = {
+		width: Math.round(width / 20),
+		height: Math.round(((width / 20) * 3) / 4)
+	};
 
 	let saturation = 0;
 	const { onPointerEnter, onPointerLeave, hovering } = useCursor();
@@ -57,27 +62,25 @@
 	}}
 >
 	<T.Mesh
-		scale.x={(width / 100) * $scale}
-		scale.y={(height / 100) * $scale}
+		scale.x={boxSize.width * $scale}
+		scale.y={boxSize.height * $scale}
 		scale.z={$scale}
-		position.z={20}
+		position.z={10}
 		on:pointerenter={onPointerEnter}
 		on:pointerleave={onPointerLeave}
 		on:click={() => {
 			handleClick(id);
 		}}
 	>
-		<T.PlaneGeometry args={[100, 100, 2]} />
+		<T.PlaneGeometry args={[20, 20, 2]} />
 
-		<ImageMaterial {url} radius={0.1} zoom={thumbZoom} {saturation} class="relative" />
+		<ImageMaterial {url} radius={0.2} zoom={thumbZoom} {saturation} class="relative" />
 	</T.Mesh>
 	{#if $hovering && description}
 		<HTML in={scaleTransition} out={scaleTransition}>
-			<div
-				class="absolute h-auto w-auto max-w-screen rounded-sm opacity-80 text-wrap bg-gray-600 sepia"
-			>
+			<div class="absolute h-auto w-auto max-w-screen opacity-80 text-wrap bg-gray-600 ">
 				<div
-					class="bg-gray-50 p-10 border-black border-2 !aspect-video max-w-full max-h-full divide-y divide-current"
+					class="bg-gray-50 p-10 border-black border-2 rounded-md !aspect-video max-w-full max-h-full divide-y divide-current"
 				>
 					<div>
 						<h1 class="text-gray-800 font-serif text-center text-sm mb-2">{description}</h1>
@@ -91,12 +94,6 @@
 	{/if}
 
 	<Box class="h-auto w-auto flex-0 items-center justify-center mt-8">
-		<Label
-			text={title}
-			z={25}
-			
-			fontSize={description ? 'm' : 'l'}
-			color="#FFFFFF"
-		/>
+		<Label text={title} z={10} fontSize={'s'} color="#FFFFFF" />
 	</Box>
 </T.Group>

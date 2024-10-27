@@ -171,7 +171,7 @@ export const logStore = createLogStore();
 export const cameraControls = writable(undefined);
 
 export const desktop = writable(undefined);
-
+export const room = writable(undefined);
 export const wunderkammerRef = writable(undefined);
 
 const initialPropsData = {

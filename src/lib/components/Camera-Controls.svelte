@@ -48,11 +48,13 @@
 	let disableAutoRotate = false;
 	useTask(
 		(delta) => {
+			
 			if (autoRotate && !disableAutoRotate) {
 				getControls().azimuthAngle += 4 * delta * DEG2RAD * autoRotateSpeed;
 			}
 			const updated = getControls().update(delta);
 			if (updated) invalidate();
+			
 		},
 		{
 			autoInvalidate: false

@@ -69,7 +69,7 @@ export class ModelProcessor {
 						resolve(gltf);
 					},
 					(progress) => {
-						const percent = ((progress.loaded / progress.total) * 100).toFixed(2);
+						const percent = ((progress.loaded / progress.total) * 100).toFixed();
 						console.log(`ModelProcessor: Loading progress: ${percent}%`);
 						logStore.addProgress(`ModelProcessor: Loading progress: ${percent}%`);
 					},
@@ -96,7 +96,7 @@ export class ModelProcessor {
 		try {
 			const scene = gltf.scene;
 
-			// Reset transformations
+		
 			scene.position.set(0, 0, 0);
 			scene.rotation.set(0, 0, 0);
 			scene.scale.set(1, 1, 1);

@@ -1,7 +1,7 @@
 <script>
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { spring } from 'svelte/motion';
-	import { cubicIn } from 'svelte/easing';
+	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { T, extend, useTask, useThrelte } from '@threlte/core';
 	import { Pane, Folder, Slider } from 'svelte-tweakpane-ui';
 	import * as THREE from 'three';
@@ -14,8 +14,11 @@
 		OrbitControls,
 		createTransition,
 		useCursor,
-		Align
+		Align,
+		Portal,
+		PortalTarget
 	} from '@threlte/extras';
+	import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 	import {
 		screenActions,
 		modelActions,
@@ -27,12 +30,14 @@
 		activeScene,
 		propsState,
 		propsActions,
+		room
 	} from './utils/stores.js';
 	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
+	import Keyboard from './models/Keyboard.svelte';
 	import Room from './models/Room.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
-	import Keyboard from './models/Keyboard.svelte';
+	import Upright from './models/Upright.svelte';
 	import Wunderkammer from './models/Wunderkammer.svelte';
 	import CameraControls from './Camera-Controls.svelte';
 
@@ -47,9 +52,12 @@
 	let doorsOpen;
 	let model = null;
 	let isModelLoading = false;
-
-	let pCamera;
-
+	let uiRef;
+	let starCount;
+	let boundingBox;
+	let center;
+	export let innerWidth;
+	export let innerHeight;
 	interactivity();
 	extend({
 		OrbitControls
@@ -65,10 +73,15 @@
 		if (!$screenState.isModelLoaded) {
 			cleanupModel();
 		}
+		if (!showUi && $cameraControls) {
+			$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
+		}
 	});
+
 	const unsubProps = propsState.subscribe(($propsState) => {
 		doorsOpen = $propsState.doorsOpen;
 	});
+
 	function cleanupModel() {
 		if (model && model.scene) {
 			model.traverse((child) => {
@@ -97,7 +110,20 @@
 			duration: 1200
 		};
 	});
+	const corkscrew = createTransition((ref) => {
+		const startY = 100;
+		const endY = 15;
+		return {
+			tick(t) {
+				t = 1 - t;
+				ref.position.y = startY + (endY - startY) * (1 - t);
 
+				ref.position.z = t;
+			},
+			easing: cubicOut,
+			duration: 10000
+		};
+	});
 	async function handleOpenUi() {
 		await tick();
 		if (!showUi) {
@@ -107,11 +133,11 @@
 			screenActions.setModelLoadState(false);
 		}
 	}
-	
 	useTask(
 		async () => {
 			await tick();
 			renderer.render(scene, camera.current);
+			rotation += tick;
 		},
 		{ stage: renderStage }
 	);
@@ -124,11 +150,14 @@
 
 {#if showUi}
 	<ScreenUi
+		position={[0, 0, 0]}
 		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
 				console.log('screen cleanup');
 			});
 		}}
+		{innerWidth}
+		{innerHeight}
 	/>
 {:else if !showUi}
 	<T.Group
@@ -139,6 +168,7 @@
 		}}
 		castShadow
 		receiveShadow
+		position.y={-10}
 	>
 		<Grid
 			position.y={-0.5}
@@ -151,23 +181,16 @@
 
 		<Room rotation.y={-2} in={fade} out={fade}></Room>
 
-		<Keyboard on:pointerenter={onPointerEnter} on:pointerleave={onPointerLeave} />
+		<Upright />
 		<Desktop
-			position={[1, 0.75, 3]}
-			rotation={[Math.PI / 2, 0, Math.PI / 2]}
-			scale={$macbookScale}
 			on:create={(ref) => {
 				$desktop = ref;
 				if ($cameraControls) {
-					$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true);
+					$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
 				}
 			}}
 			on:click={() => {
-				if ($desktop) {
-					$cameraControls.fitToBox($desktop, true).then(() => {
-						handleOpenUi();
-					});
-				}
+				handleOpenUi();
 			}}
 			on:pointerenter={() => {
 				onPointerEnter();
@@ -179,29 +202,31 @@
 			}}
 			in={fade}
 			out={fade}
-		/>
-
-		<Wunderkammer
-			on:click={() => {
-				if ($wunderkammerRef) {
-					if (!doorsOpen) {
-						$cameraControls.rotate(10 * DEG2RAD, 0, true).then(() => {
-							$cameraControls.fitToBox($wunderkammerRef, true);
-							propsActions.setDoors(true);
-						});
-					} else if (doorsOpen) {
-						$cameraControls.setLookAt(-30, 20, 10, 0, 1, 0, true).then(() => {
-							propsActions.setDoors(false);
-						});
-					}
-				}
-			}}
-			on:pointerenter={onPointerEnter}
-			on:pointerleave={onPointerLeave}
-		/>
-
+		></Desktop>
 		{#if $sceneTransform.url}
-			<T.Group position.y={1}>
+			<Align precise="true" position={[-12, 15, -30]}>
+				<Wunderkammer
+					in={corkscrew}
+					on:click={() => {
+						if ($wunderkammerRef) {
+							if (!doorsOpen) {
+								$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
+									$cameraControls.rotate(10 * DEG2RAD, 0, true).then(() => {
+										$cameraControls.fitToBox($wunderkammerRef, true);
+										propsActions.setDoors(true);
+									});
+								});
+							} else if (doorsOpen) {
+								$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
+									propsActions.setDoors(false);
+								});
+							}
+						}
+					}}
+					on:pointerenter={onPointerEnter}
+					on:pointerleave={onPointerLeave}
+				/>
+
 				<Model
 					on:create={({ ref, cleanup }) => {
 						cleanup(() => {
@@ -220,19 +245,20 @@
 						modelActions.setModelUrl(null);
 					}}
 				/>
-			</T.Group>
+			</Align>
 		{/if}
 	</T.Group>
+	<Stars speed={3} count={starCount} />
 {/if}
 
-<T.PerspectiveCamera
-	ref={pCamera}
+<T.OrthographicCamera
+	ref={$cameraControls}
 	makeDefault
-	position={[-30, 20, 10]}
-	fov={30}
+	zoom={innerWidth / 300}
+	position={[-100, 40, 30]}
 	on:create={({ pCamera, cleanup }) => {
 		cleanup(() => {
-			console.log('Cleaning up Perspective Camera');
+			console.log('Cleaning up Orthographic Camera');
 		});
 	}}
 >
@@ -241,7 +267,7 @@
 			$cameraControls = ref;
 		}}
 	/>
-</T.PerspectiveCamera>
+</T.OrthographicCamera>
 
 <Sky
 	setEnvironment
@@ -251,4 +277,3 @@
 	elevation={0.25}
 	mieCoefficient={0.1}
 />
-<Stars speed={3} />

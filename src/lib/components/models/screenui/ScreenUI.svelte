@@ -16,28 +16,33 @@
 	import ModelPage from './ModelPage.svelte';
 	import Lever from './Lever.svelte';
 	import { get } from 'svelte/store';
+
 	import {
 		modelActions,
 		screenActions,
 		screenState,
 		activeScene,
-		selectedModel
+		selectedModel,
+		cameraControls
 	} from '../../utils/stores';
 	import { calculateResponsiveDimensions } from '../../utils/responsivityUtils';
 
-	const uiComponent = forwardEventHandlers();
+	const component = forwardEventHandlers();
 	const leverComponent = forwardEventHandlers();
 
 	let lever = false;
 	let modelUI = false;
 	let mounted = false;
-	export const uiRef = new THREE.Group();
+	export let ref = new THREE.Group();
 	export const leverRef = new THREE.Group();
+	export let innerWidth;
 
-	$: dimensions = calculateResponsiveDimensions(
-		$screenState.screenSize.innerWidth,
-		$screenState.screenSize.innerHeight
-	);
+	export let innerHeight;
+
+	// $: dimensions = calculateResponsiveDimensions(
+	// 	$screenState.screenSize.innerWidth,
+	// 	$screenState.screenSize.innerHeight
+	// );
 
 	interactivity();
 	transitions();
@@ -46,12 +51,7 @@
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
 
 	const renderUI = () => {
-		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
-		const distanceFromCamera = 1000;
-		uiRef.position
-			.copy(camera.current.position)
-			.add(cameraDirection.multiplyScalar(distanceFromCamera));
-		uiRef.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
+		ref.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
 	};
 
 	async function handleModel(event) {
@@ -137,8 +137,18 @@
 </script>
 
 {#if mounted && $screenState.isOpen}
-	<T is={uiRef} {...$$restProps} bind:this={$uiComponent}>
-		<Window title="wunderkammer" width={dimensions.width} height={dimensions.height} fontSize="">
+	<T is={ref} {...$$restProps} bind:this={$component}>
+		<Window
+			title="wunderkammer"
+			width={innerWidth}
+			height={innerHeight}
+			fontSize=""
+			on:create={(ref) => {
+				if ($cameraControls) {
+					$cameraControls.fitToBox(ref, true);
+				}
+			}}
+		>
 			{#key $screenState.currentPage}
 				{#if $screenState.currentPage === 'models'}
 					<Models on:select={handleModel} />

@@ -53,11 +53,11 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	});
 </script>
 
-<T is={ref} dispose={false} {...$$restProps} bind:this={$component}>
+<T is={ref} dispose={false} {...$$restProps} bind:this={$component} scale={0.7} >
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}
-		<T.Group name="Scene" scale={0.15} position={[-1, 0, -4]}>
+	
 			<T.Mesh
 				name="Cabinet_Baked"
 				geometry={gltf.nodes.Cabinet_Baked.geometry}
@@ -81,7 +81,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 				on:pointerleave={onPointerLeave}
 				on:click={triggerAnimation}
 			/>
-		</T.Group>
+	
 	{:catch error}
 		<slot name="error" {error} />
 	{/await}

@@ -83,7 +83,7 @@
 <svelte:window bind:innerWidth bind:innerHeight />
 <div class="scene">
 	<Canvas>
-		<Scene />
+		<Scene {innerWidth} {innerHeight} />
 	</Canvas>
 </div>
 
