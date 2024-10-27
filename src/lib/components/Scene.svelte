@@ -16,7 +16,7 @@
 		useCursor,
 		Align,
 		Portal,
-		PortalTarget
+		TransformControls
 	} from '@threlte/extras';
 	import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 	import {
@@ -56,8 +56,10 @@
 	let starCount;
 	let boundingBox;
 	let center;
+	let view;
 	export let innerWidth;
 	export let innerHeight;
+	$: view = $screenState.isOpen ? 'ui' : 'scene';
 	interactivity();
 	extend({
 		OrbitControls
@@ -67,14 +69,20 @@
 
 	const unsubScreen = screenState.subscribe(($screenState) => {
 		showUi = $screenState.isOpen;
-		currentScreen = $screenState.currentScreen;
+		currentScreen = $screenState.currentPage;
 		showModel = $screenState.isModelLoaded;
 		doorsOpen = $screenState.doorsOpen;
 		if (!$screenState.isModelLoaded) {
 			cleanupModel();
 		}
-		if (!showUi && $cameraControls) {
-			$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
+		if ($cameraControls) {
+			if (showUi) {
+				// $cameraControls.setLookAt(0, 0, 0, 500, 500, 500, false);
+				$cameraControls.zoomTo(1, true);
+			} else {
+				$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
+				$cameraControls.zoomTo(10, true);
+			}
 		}
 	});
 
@@ -121,7 +129,7 @@
 				ref.position.z = t;
 			},
 			easing: cubicOut,
-			duration: 10000
+			duration: 5000
 		};
 	});
 	async function handleOpenUi() {
@@ -133,11 +141,13 @@
 			screenActions.setModelLoadState(false);
 		}
 	}
+	let helperCube;
 	useTask(
 		async () => {
 			await tick();
 			renderer.render(scene, camera.current);
 			rotation += tick;
+		
 		},
 		{ stage: renderStage }
 	);
@@ -187,6 +197,7 @@
 				$desktop = ref;
 				if ($cameraControls) {
 					$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
+					$cameraControls.zoomTo(0.7, true);
 				}
 			}}
 			on:click={() => {
@@ -203,30 +214,41 @@
 			in={fade}
 			out={fade}
 		></Desktop>
-		{#if $sceneTransform.url}
-			<Align precise="true" position={[-12, 15, -30]}>
-				<Wunderkammer
-					in={corkscrew}
-					on:click={() => {
-						if ($wunderkammerRef) {
-							if (!doorsOpen) {
-								$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
-									$cameraControls.rotate(10 * DEG2RAD, 0, true).then(() => {
-										$cameraControls.fitToBox($wunderkammerRef, true);
-										propsActions.setDoors(true);
-									});
+	
+			<T.Mesh
+				on:create={(ref) => {
+					helperCube = ref;
+				}}
+				position.y={1}
+			>
+				<T.BoxGeometry args={[1, 2, 1]} />
+				<T.MeshBasicMaterial color="hotpink" />
+			</T.Mesh>
+		
+		<Align precise="true" position={[-20, 16, -35]} rotation.y={-0.4}>
+			<Wunderkammer
+				in={corkscrew}
+				on:click={() => {
+					if ($wunderkammerRef) {
+						if (!doorsOpen) {
+							$cameraControls.setTarget(-20, 16, -35, true).then(() => {
+								$cameraControls.moveTo(-20, 16, -35, true).then(() => {
+									$cameraControls.fitToBox($wunderkammerRef, true);
+									propsActions.setDoors(true);
 								});
-							} else if (doorsOpen) {
-								$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
-									propsActions.setDoors(false);
-								});
-							}
+							});
+						} else if (doorsOpen) {
+							$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
+								$cameraControls.zoomTo(10, true);
+								propsActions.setDoors(false);
+							});
 						}
-					}}
-					on:pointerenter={onPointerEnter}
-					on:pointerleave={onPointerLeave}
-				/>
-
+					}
+				}}
+				on:pointerenter={onPointerEnter}
+				on:pointerleave={onPointerLeave}
+			/>
+			{#if $sceneTransform.url}
 				<Model
 					on:create={({ ref, cleanup }) => {
 						cleanup(() => {
@@ -245,30 +267,27 @@
 						modelActions.setModelUrl(null);
 					}}
 				/>
-			</Align>
-		{/if}
+			{/if}
+		</Align>
 	</T.Group>
 	<Stars speed={3} count={starCount} />
 {/if}
-
 <T.OrthographicCamera
-	ref={$cameraControls}
+	args={[innerWidth / -2, innerWidth / 2, innerHeight / 2, innerHeight / -2, 1, 4000]}
 	makeDefault
-	zoom={innerWidth / 300}
-	position={[-100, 40, 30]}
-	on:create={({ pCamera, cleanup }) => {
-		cleanup(() => {
-			console.log('Cleaning up Orthographic Camera');
-		});
-	}}
 >
 	<CameraControls
 		on:create={({ ref }) => {
 			$cameraControls = ref;
+			if (showUi) {
+				ref.zoomTo(1, true);
+			} else {
+				ref.setLookAt(-100, 40, 30, 0, 1, 0, true);
+				ref.zoomTo(10, true);
+			}
 		}}
 	/>
 </T.OrthographicCamera>
-
 <Sky
 	setEnvironment
 	turbidity={3}
@@ -276,4 +295,5 @@
 	azimuth={68}
 	elevation={0.25}
 	mieCoefficient={0.1}
+	scale={4000}
 />

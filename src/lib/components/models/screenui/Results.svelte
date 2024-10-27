@@ -94,6 +94,6 @@
 	{/if}
 
 	<Box class="h-auto w-auto flex-0 items-center justify-center mt-8">
-		<Label text={title} z={10} fontSize={'s'} color="#FFFFFF" />
+		<Label text={title} z={10} fontSize={'l'} color="#FFFFFF" />
 	</Box>
 </T.Group>

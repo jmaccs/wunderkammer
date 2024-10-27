@@ -28,7 +28,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Lever.glb -T -u -k
 		color: 0xff0000
 	});
 	const fly = createTransition((ref) => {
-		const startY = 10
+		const startY = 1000
 		const endY = 0
 		return {
 			tick(t) {
@@ -54,7 +54,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Lever.glb -T -u -k
 	};
 </script>
 
-<T is={ref} dispose={false} {...$$restProps} bind:this={$component} in={fly}>
+<T is={ref} dispose={false} {...$$restProps} bind:this={$component} in={fly} scale={100} >
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}

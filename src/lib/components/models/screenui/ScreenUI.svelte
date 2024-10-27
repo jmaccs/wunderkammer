@@ -8,13 +8,14 @@
 	} from '@threlte/core';
 	import { interactivity, transitions } from '@threlte/extras';
 	import * as THREE from 'three';
-	import { fetchModels } from '../../utils/api';
+	import { fetchModels, getModelData } from '../../utils/api';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import Models from './Models.svelte';
 	import Window from './Window.svelte';
 	import Menu from './Menu.svelte';
 	import ModelPage from './ModelPage.svelte';
 	import Lever from './Lever.svelte';
+	import Search from './Search.svelte';
 	import { get } from 'svelte/store';
 
 	import {
@@ -39,24 +40,29 @@
 
 	export let innerHeight;
 
-	// $: dimensions = calculateResponsiveDimensions(
-	// 	$screenState.screenSize.innerWidth,
-	// 	$screenState.screenSize.innerHeight
-	// );
+	$: windowWidth = Math.min(Math.max(innerWidth, 400), 800);
+	$: windowHeight = Math.min(Math.max(innerHeight, 400), 800);
 
 	interactivity();
 	transitions();
 
-	const userCtx = useThrelteUserContext();
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
-
+	autoRender.set(false);
 	const renderUI = () => {
+		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
+		const distanceFromCamera = 1000;
+		ref.position
+			.copy(camera.current.position)
+			.add(cameraDirection.multiplyScalar(distanceFromCamera));
+		ref.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
 		ref.lookAt(camera.current.position.x, camera.current.position.y, camera.current.position.z);
 	};
 
 	async function handleModel(event) {
 		const uid = event.detail.value;
 		await modelActions.setSelectedModel(uid);
+		const data = await getModelData(uid);
+		console.log(data);
 		screenActions.setPage('model-page');
 		modelUI = true;
 	}
@@ -72,6 +78,7 @@
 			if (!currentModel) return null;
 
 			const url = await fetchModels(currentModel.uid);
+			console.log(currentModel);
 			return url;
 		} catch (error) {
 			console.error('Failed to load model:', error);
@@ -87,7 +94,7 @@
 			screenActions.setModelLoadState(true);
 		}
 	}
-	function handleModelSelect() {
+	async function handleModelSelect() {
 		lever = true;
 		renderLever();
 	}
@@ -96,7 +103,7 @@
 		const cameraRight = new THREE.Vector3();
 		cameraRight.crossVectors(cameraDirection, camera.current.up).normalize();
 
-		const distanceFromCamera = 15;
+		const distanceFromCamera = 50;
 		const leftOffset = -5;
 
 		leverRef.position
@@ -138,17 +145,7 @@
 
 {#if mounted && $screenState.isOpen}
 	<T is={ref} {...$$restProps} bind:this={$component}>
-		<Window
-			title="wunderkammer"
-			width={innerWidth}
-			height={innerHeight}
-			fontSize=""
-			on:create={(ref) => {
-				if ($cameraControls) {
-					$cameraControls.fitToBox(ref, true);
-				}
-			}}
-		>
+		<Window title="wunderkammer" width={windowWidth} height={windowHeight} fontSize="">
 			{#key $screenState.currentPage}
 				{#if $screenState.currentPage === 'models'}
 					<Models on:select={handleModel} />
@@ -165,13 +162,16 @@
 						}}
 					/>
 				{/if}
+				{#if $screenState.currentPage === 'search'}
+						<Search />
+				{/if}
 			{/key}
+
+			{#if lever}
+				<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition}>
+					<Lever />
+				</T>
+			{/if}
 		</Window>
 	</T>
-
-	{#if lever}
-		<T is={leverRef} bind:this={$leverComponent} on:click={handleLoadTransition}>
-			<Lever />
-		</T>
-	{/if}
 {/if}

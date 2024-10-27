@@ -1,7 +1,7 @@
 <script>
 	import { Text } from '@threlte/extras';
 	import { useReflow } from '@threlte/flex';
-	
+
 	export let text;
 	export let color = 'white';
 	export let z = 20;
@@ -9,21 +9,19 @@
 	export let anchorY = '50%';
 	export let fontSize = 'l';
 	export let font = `/fonts/Catrinity.otf`;
-	
-	const fontSizes = {
-		xs: 1,
-		s: 2,
-		m: 4,
-		l: 6,
-		xl: 8
-	};
 
+	const fontSizes = {
+		xs: 4,
+		s: 6,
+		m: 8,
+		l: 10,
+		xl: 12
+	};
 
 	function getScaledSize(size) {
 		const baseSize = fontSizes[size];
 		if (typeof window === 'undefined') return baseSize;
-		
-	
+
 		return window.innerWidth <= 768 ? baseSize * 0.8 : baseSize;
 	}
 
@@ -32,7 +30,7 @@
 </script>
 
 <Text
-	font={font}
+	{font}
 	position.z={z}
 	{text}
 	{anchorX}
