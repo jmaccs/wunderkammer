@@ -19,7 +19,7 @@
 	}
 
 	const tweenedProgress = tweened($progress, {
-		duration: 800
+		duration: 6000
 	});
 	$: tweenedProgress.set($progress);
 

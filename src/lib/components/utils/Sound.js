@@ -73,7 +73,7 @@ function noteToFrequency(note) {
 		this.gainNodes = [];
 	}
 
-	// Cache/memoize the frequency for each note
+
 	getFrequency(note) {
 		if (!this.frequencyCache[note]) {
 			this.frequencyCache[note] = noteToFrequency(note);
@@ -81,7 +81,7 @@ function noteToFrequency(note) {
 		return this.frequencyCache[note];
 	}
 
-	// Create new oscillators and gain nodes for each playback
+
 	initializeOscillators(note) {
 		this.oscillators = [];
 		this.gainNodes = [];
@@ -107,13 +107,13 @@ function noteToFrequency(note) {
 		}
 	}
 
-	// Start playback by creating new oscillators and ramping up gain
+	
 	startPlayback(note) {
 		if (!this.isPlaying) {
 			this.initializeOscillators(note);
 
 			this.oscillators.forEach((oscillator, i) => {
-				// Fade in by ramping the gain up smoothly
+				
 				this.gainNodes[i].gain.cancelScheduledValues(this.ctx.currentTime);
 				this.gainNodes[i].gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05);
 
@@ -124,20 +124,19 @@ function noteToFrequency(note) {
 		}
 	}
 
-	// Gently stop playback by fading the gain out and stopping oscillators
 	stopPlayback() {
 		if (this.isPlaying) {
 			this.gainNodes.forEach(gainNode => {
-				// Fade out by ramping the gain down smoothly
+		
 				gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
 				gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3); // 0.3s fade-out
 			});
 
-			// Stop the oscillators after the fade-out
+		
 			setTimeout(() => {
 				this.oscillators.forEach(oscillator => oscillator.stop(this.ctx.currentTime)); // Stop oscillators after fade-out
 				this.isPlaying = false;
-			}, 300); // 300ms corresponds to the fade-out duration
+			}, 300);
 		}
 	}
 }

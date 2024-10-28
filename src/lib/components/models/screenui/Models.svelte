@@ -2,11 +2,11 @@
 	import { Box, useReflow, useDimensions } from '@threlte/flex';
 	import { getAllModels } from '../../utils/api.js';
 	import { onMount } from 'svelte';
-	import { modelActions } from '../../utils/stores.js';
+	import { modelActions, modelList as modelListStore } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
 	import Label from './Label.svelte';
-	let modelList = [];
+	
 	let isLoading = true;
 	export let rows = 3;
 	export let columns = 3;
@@ -18,18 +18,17 @@
 
 	$: itemsPerPage = rows * columns;
 	$: offset = (page - 1) * itemsPerPage;
-	$: if (modelList.length > 0) {
-		currentPage = modelList.slice(offset, offset + itemsPerPage);
+	$: if ($modelListStore.length > 0) {
+		currentPage = $modelListStore.slice(offset, offset + itemsPerPage);
 		reflow();
 	}
-	$: totalPages = Math.ceil(modelList.length / itemsPerPage);
+	$: totalPages = Math.ceil($modelListStore.length / itemsPerPage);
 
 	async function loadModels() {
 		isLoading = true;
 		try {
 			const res = await getAllModels();
-			modelList = res;
-			modelActions.setModelList(modelList);
+			modelActions.setModelList(res);
 		} catch (error) {
 			console.error('Failed to load models:', error);
 		} finally {
@@ -39,7 +38,11 @@
 	}
 
 	onMount(async () => {
-		await loadModels();
+		if ($modelListStore.length === 0) {
+			await loadModels();
+		} else {
+			isLoading = false;
+		}
 	});
 </script>
 

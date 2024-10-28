@@ -52,7 +52,7 @@
 	let isModelLoading = false;
 
 	let starCount;
-
+	let modelRef;
 	let view;
 	export let innerWidth;
 	export let innerHeight;
@@ -157,7 +157,6 @@
 		}}
 		castShadow
 		receiveShadow
-		position.y={-10}
 	>
 		<Grid
 			position.y={-0.5}
@@ -194,69 +193,52 @@
 			out={fade}
 		></Desktop>
 
-		<!-- <T.Mesh
-				on:create={(ref) => {
-					helperCube = ref;
-				}}
-				position={[17, 53 ,-23]}
-			>
-				<T.BoxGeometry args={[1, 2, 1]} />
-				<T.MeshBasicMaterial color="hotpink" />
-			</T.Mesh> -->
 		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
-		<Align
-			auto
-			precise="true"
-			on:align={({ boundingBox }) => {
-				if ($wunderkammerRef) {
-					boundingBox = $wunderkammerRef.boundingBox;
-				}
-			}}
-			position={[-20, 15, -35]}
-			rotation.y={-0.4}
-			let:align
-		>
-			<Wunderkammer
-				on:click={() => {
-					if ($wunderkammerRef) {
-						if (!doorsOpen) {
-							$cameraControls.rotateAzimuthTo(30 * THREE.MathUtils.DEG2RAD, true).then(() => {
-								$cameraControls.fitToBox($wunderkammerRef, true);
-							});
-						} else if (doorsOpen) {
-							$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
-								$cameraControls.zoomTo(10, true);
-							});
-						}
-					}
-				}}
-				on:pointerenter={onPointerEnter}
-				on:pointerleave={onPointerLeave}
-			/>
-			{#if $modelTransform.url}
-				<Model
-					on:create={({ ref, cleanup }) => {
-						align();
-						cleanup(() => {
-							console.log('Model cleanup initiated');
-						});
-					}}
-					on:load={({ detail }) => {
-						isModelLoading = false;
-						model = detail.model;
-						console.log('Model loaded successfully');
-						invalidate();
-					}}
-					on:error={(e) => {
-						console.error('Model loading error:', e);
-						isModelLoading = false;
-						modelActions.setModelUrl(null);
-					}}
-					position.y={10}
-				/>
-			{/if}
-		</Align>
 	</T.Group>
+<Align auto position={[-15, 15, -40]}>
+	<Wunderkammer
+		
+		rotation.y={-0.4}
+		on:click={() => {
+			if ($wunderkammerRef) {
+				if (!doorsOpen) {
+					$cameraControls.rotateAzimuthTo(30 * THREE.MathUtils.DEG2RAD, true).then(() => {
+						$cameraControls.fitToBox($wunderkammerRef, true);
+					});
+				} else if (doorsOpen) {
+					$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
+						$cameraControls.zoomTo(10, true);
+					});
+				}
+			}
+		}}
+		on:pointerenter={onPointerEnter}
+		on:pointerleave={onPointerLeave}
+	/>
+	{#if $modelTransform.url && $wunderkammerRef}
+		<Model
+			on:create={({ ref, cleanup }) => {
+				modelRef = ref;
+
+				cleanup(() => {
+					console.log('Model cleanup initiated');
+				});
+			}}
+			on:load={({}) => {
+				isModelLoading = false;
+
+				console.log('Model loaded successfully');
+				invalidate();
+			}}
+			on:error={(e) => {
+				console.error('Model loading error:', e);
+				isModelLoading = false;
+				modelActions.setModelUrl(null);
+			}}
+			position.y={5}
+		/>
+	{/if}
+</Align>
 	<Stars speed={3} count={starCount} />
 {/if}
 {#if innerHeight && innerWidth}

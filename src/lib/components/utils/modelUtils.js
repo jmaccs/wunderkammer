@@ -39,7 +39,7 @@ export class ModelProcessor {
 			}
 
 			const processedModel = this.normalizeModel(gltf, { targetSize, center });
-	
+
 			this.traverseMeshes(processedModel.scene, (mesh) => {
 				mesh.castShadow = true;
 				mesh.receiveShadow = true;
@@ -80,7 +80,7 @@ export class ModelProcessor {
 		} catch (error) {
 			console.warn('ModelProcessor: Error handling Specular Glossiness material:', error);
 			logStore.addError('ModelProcessor: Error handling Specular Glossiness material:', error);
-			
+
 			// Fallback to basic material if material processing fails
 			mesh.material = new THREE.MeshStandardMaterial({
 				color: new THREE.Color(0.8, 0.8, 0.8),
@@ -132,6 +132,7 @@ export class ModelProcessor {
 			scene.rotation.set(0, 0, 0);
 			scene.scale.set(1, 1, 1);
 			scene.updateMatrix();
+			scene.updateMatrixWorld(true);
 
 			const box = new THREE.Box3().setFromObject(scene);
 			const size = box.getSize(new THREE.Vector3());

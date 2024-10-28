@@ -66,7 +66,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/upright.glb -s -T -k
 	{...$$restProps}
 	bind:this={$component}
 	position={[10, 10, 0]}
-	rotation.y={-Math.PI / 2}
+	rotation.y={-1.8}
 	scale={1.4}
 >
 	{#await gltf}

@@ -87,17 +87,26 @@
 	}
 
 	async function handleLoadTransition() {
+		// First clear any existing model
+		modelActions.setModelUrl(null);
+		screenActions.setModelLoadState(false);
+
+		// Then get and load the new model
 		const url = await getModel();
 		if (url) {
-			modelActions.setModelUrl(url);
 			screenActions.toggleScreen(false);
+			// Wait a tick to ensure UI is closed before loading model
+			await tick();
+			modelActions.setModelUrl(url);
 			screenActions.setModelLoadState(true);
 		}
 	}
+
 	async function handleModelSelect() {
 		lever = true;
 		renderLever();
 	}
+
 	const renderLever = () => {
 		const cameraDirection = camera.current.getWorldDirection(new THREE.Vector3());
 		const cameraRight = new THREE.Vector3();
@@ -116,6 +125,7 @@
 	function handleBack() {
 		screenActions.setPage('models');
 		modelActions.setSelectedModel(null);
+		lever = false;
 	}
 
 	function handleKeydown(event) {
