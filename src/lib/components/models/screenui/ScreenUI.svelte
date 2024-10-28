@@ -9,7 +9,7 @@
 	import { interactivity, transitions } from '@threlte/extras';
 	import * as THREE from 'three';
 	import { fetchModels, getModelData } from '../../utils/api';
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onMount, onDestroy, tick, createEventDispatcher } from 'svelte';
 	import Models from './Models.svelte';
 	import Window from './Window.svelte';
 	import Menu from './Menu.svelte';
@@ -104,26 +104,26 @@
 		cameraRight.crossVectors(cameraDirection, camera.current.up).normalize();
 
 		const distanceFromCamera = 50;
-		const leftOffset = -5;
+		const leftOffset = -2000;
 
 		leverRef.position
 			.copy(camera.current.position)
 			.add(cameraDirection.multiplyScalar(distanceFromCamera));
 
 		leverRef.position.add(cameraRight.multiplyScalar(leftOffset));
-
-		leverRef.lookAt(
-			camera.current.position.x,
-			camera.current.position.y,
-			camera.current.position.z
-		);
 	};
+
+	function handleBack() {
+		screenActions.setPage('models');
+		modelActions.setSelectedModel(null);
+	}
+
 	function handleKeydown(event) {
 		if (event.key === 'Escape' && $screenState.isOpen) {
 			screenActions.toggleScreen(false);
 		}
 	}
-
+	const dispatch = createEventDispatcher();
 	onMount(() => {
 		renderUI();
 		mounted = true;
@@ -145,7 +145,7 @@
 
 {#if mounted && $screenState.isOpen}
 	<T is={ref} {...$$restProps} bind:this={$component}>
-		<Window title="wunderkammer" width={windowWidth} height={windowHeight} fontSize="">
+		<Window title="wunderkammer" width={windowWidth} height={windowHeight} >
 			{#key $screenState.currentPage}
 				{#if $screenState.currentPage === 'models'}
 					<Models on:select={handleModel} />
@@ -157,9 +157,8 @@
 
 				{#if $screenState.currentPage === 'model-page' && $selectedModel}
 					<ModelPage
-						on:click={() => {
-							handleModelSelect();
-						}}
+						on:back={handleBack}
+						on:model={handleModelSelect}
 					/>
 				{/if}
 				{#if $screenState.currentPage === 'search'}

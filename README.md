@@ -1,38 +1,72 @@
-# create-svelte
+# Wunderkammer
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+A 3D interactive web experience built with Svelte, Threlte, and Three.js. View the live demo at [https://wunderkammer.onrender.com/](https://wunderkammer.onrender.com/)
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Interactive 3D environment with multiple models and scenes
+- Custom shaders and visual effects
+- Screen UI components for navigation and interaction
+- Model viewer with search functionality
+- Interactive controls and animations
+- Sound integration (WIP)
+- Responsive design (WIP)
 
+## Tech Stack
+
+- [Svelte](https://svelte.dev/) + [SvelteKit](https://kit.svelte.dev/)
+- [Threlte](https://threlte.xyz/) for 3D rendering in Svelte
+- [Three.js](https://threejs.org/) for 3D graphics
+- [TailwindCSS](https://tailwindcss.com/) for styling
+- Custom GLSL shaders
+- Camera controls and post-processing effects
+
+## Getting Started
+
+1. Clone the repository:
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+git clone https://github.com/yourusername/wunderkammer.git
+cd wunderkammer
 ```
 
-## Developing
+2. Install dependencies:
+```bash
+npm install
+```
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+3. Create a `.env.local` file in the root directory and add your Sketchfab API key:
+```
+VITE_SKETCHFAB_TOKEN=your_api_key_here
+```
+You'll need to create a Sketchfab account and generate an API key to run the project locally.
 
+4. Start the development server:
 ```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+5. Open your browser and navigate to `http://localhost:5173`
 
-To create a production version of your app:
+## Building for Production
+
+To create a production build:
 
 ```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+Preview the production build:
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+```bash
+npm run preview
+```
+
+## Project Structure
+
+- `/src/lib/components/models/` - 3D models and scene components
+- `/src/lib/components/models/screenui/` - UI overlay components
+- `/src/lib/components/models/shaders/` - Custom GLSL shaders
+- `/src/lib/components/utils/` - Utility functions and stores
+- `/static/models/` - 3D model assets
+- `/static/img/` - Image assets
+- `/static/fonts/` - Custom fonts

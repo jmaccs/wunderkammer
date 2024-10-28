@@ -6,8 +6,8 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 <script>
 	import * as THREE from 'three';
 	import { T, forwardEventHandlers } from '@threlte/core';
-	import { onMount, onDestroy } from 'svelte';
-	import { wunderkammerRef, propsState } from '../utils/stores.js';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { wunderkammerRef, screenActions, screenState } from '../utils/stores.js';
 	import {
 		useGltf,
 		useGltfAnimations,
@@ -24,8 +24,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	const gltf = suspend(useGltf('/models/cabinet-transformed.glb', { useDraco: true }));
 	export const { actions, mixer } = useGltfAnimations(gltf, ref);
 
-	const component = forwardEventHandlers();
-
+	$: doorsOpen = $screenState.doorsOpen;
 	export const triggerAnimation = () => {
 		const cabinetActionL = $actions['Open Left'];
 		const cabinetActionR = $actions['Open Right'];
@@ -34,10 +33,12 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 			cabinetActionR.loop = THREE.LoopOnce;
 			cabinetActionL.clampWhenFinished = true;
 			cabinetActionR.clampWhenFinished = true;
-			if ($propsState.doorsOpen === true) {
+			if (!doorsOpen) {
+				screenActions.setDoors(true);
 				cabinetActionL.timeScale = -cabinetActionL.timeScale;
 				cabinetActionR.timeScale = -cabinetActionR.timeScale;
-			} else if ($propsState.doorsOpen === false) {
+			} else if (doorsOpen) {
+				screenActions.setDoors(false);
 				cabinetActionL.timeScale = cabinetActionL.timeScale;
 				cabinetActionR.timeScale = cabinetActionR.timeScale;
 			}
@@ -53,35 +54,31 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	});
 </script>
 
-<T is={ref} dispose={false} {...$$restProps} bind:this={$component} scale={0.7} >
+<T is={ref} dispose={false} {...$$restProps} scale={0.7} on:click={triggerAnimation}>
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}
-	
-			<T.Mesh
-				name="Cabinet_Baked"
-				geometry={gltf.nodes.Cabinet_Baked.geometry}
-				material={gltf.materials.Cabinet_Baked}
-			/>
-			<T.Mesh
-				name="Door_L_Baked"
-				geometry={gltf.nodes.Door_L_Baked.geometry}
-				material={gltf.materials['Door L_Baked']}
-				position={[-9.36, 18.45, 13.7]}
-				on:pointerenter={onPointerEnter}
-				on:pointerleave={onPointerLeave}
-				on:click={triggerAnimation}
-			/>
-			<T.Mesh
-				name="Door_R_Baked"
-				geometry={gltf.nodes.Door_R_Baked.geometry}
-				material={gltf.materials['Door R_Baked']}
-				position={[8.89, 18.24, 14.07]}
-				on:pointerenter={onPointerEnter}
-				on:pointerleave={onPointerLeave}
-				on:click={triggerAnimation}
-			/>
-	
+		<T.Mesh
+			name="Cabinet_Baked"
+			geometry={gltf.nodes.Cabinet_Baked.geometry}
+			material={gltf.materials.Cabinet_Baked}
+		/>
+		<T.Mesh
+			name="Door_L_Baked"
+			geometry={gltf.nodes.Door_L_Baked.geometry}
+			material={gltf.materials['Door L_Baked']}
+			position={[-9.36, 18.45, 13.7]}
+			on:pointerenter={onPointerEnter}
+			on:pointerleave={onPointerLeave}
+		/>
+		<T.Mesh
+			name="Door_R_Baked"
+			geometry={gltf.nodes.Door_R_Baked.geometry}
+			material={gltf.materials['Door R_Baked']}
+			position={[8.89, 18.24, 14.07]}
+			on:pointerenter={onPointerEnter}
+			on:pointerleave={onPointerLeave}
+		/>
 	{:catch error}
 		<slot name="error" {error} />
 	{/await}

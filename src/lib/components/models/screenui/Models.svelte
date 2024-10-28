@@ -57,8 +57,9 @@
 						{#if currentPage[index]}
 							{@const model = currentPage[index]}
 							{@const url = model.thumbnail}
-							{@const title = model.title}
-							{@const description = model.owner || null}
+							{@const title = model.title +" | " + model.owner}
+							{@const description = model.description || null}
+							
 							{@const id = model.uid}
 							{@const thumbZoom = 0.7}
 

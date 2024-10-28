@@ -34,7 +34,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Lever.glb -T -u -k
 			tick(t) {
 				t = 1 - t;
 				ref.position.y = startY + (endY - startY) * (1 - t)
-				ref.position.z = t
+				
 			},
 			easing: cubicOut,
 			duration: 5000
@@ -54,7 +54,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Lever.glb -T -u -k
 	};
 </script>
 
-<T is={ref} dispose={false} {...$$restProps} bind:this={$component} in={fly} scale={100} >
+<T is={ref} dispose={false} {...$$restProps} bind:this={$component} in={fly} scale={80}  >
 	{#await gltf}
 		<slot name="fallback" />
 	{:then gltf}

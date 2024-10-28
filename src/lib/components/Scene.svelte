@@ -25,16 +25,14 @@
 		screenState,
 		desktop,
 		wunderkammerRef,
-		sceneTransform,
+		modelTransform,
 		cameraControls,
 		activeScene,
-		propsState,
-		propsActions,
 		room
 	} from './utils/stores.js';
 	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
-	import Keyboard from './models/Keyboard.svelte';
+	import Burner from './models/Burner.svelte';
 	import Room from './models/Room.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
 	import Upright from './models/Upright.svelte';
@@ -52,10 +50,9 @@
 	let doorsOpen;
 	let model = null;
 	let isModelLoading = false;
-	let uiRef;
+
 	let starCount;
-	let boundingBox;
-	let center;
+
 	let view;
 	export let innerWidth;
 	export let innerHeight;
@@ -72,12 +69,12 @@
 		currentScreen = $screenState.currentPage;
 		showModel = $screenState.isModelLoaded;
 		doorsOpen = $screenState.doorsOpen;
-		if (!$screenState.isModelLoaded) {
+		if (!showModel) {
 			cleanupModel();
 		}
+
 		if ($cameraControls) {
 			if (showUi) {
-				// $cameraControls.setLookAt(0, 0, 0, 500, 500, 500, false);
 				$cameraControls.zoomTo(1, true);
 			} else {
 				$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true);
@@ -85,11 +82,7 @@
 			}
 		}
 	});
-
-	const unsubProps = propsState.subscribe(($propsState) => {
-		doorsOpen = $propsState.doorsOpen;
-	});
-
+	const unsubCamera = cameraControls.subscribe(($cameraControls) => {});
 	function cleanupModel() {
 		if (model && model.scene) {
 			model.traverse((child) => {
@@ -118,20 +111,7 @@
 			duration: 1200
 		};
 	});
-	const corkscrew = createTransition((ref) => {
-		const startY = 100;
-		const endY = 15;
-		return {
-			tick(t) {
-				t = 1 - t;
-				ref.position.y = startY + (endY - startY) * (1 - t);
 
-				ref.position.z = t;
-			},
-			easing: cubicOut,
-			duration: 5000
-		};
-	});
 	async function handleOpenUi() {
 		await tick();
 		if (!showUi) {
@@ -147,14 +127,13 @@
 			await tick();
 			renderer.render(scene, camera.current);
 			rotation += tick;
-		
 		},
 		{ stage: renderStage }
 	);
 
 	onDestroy(() => {
 		unsubScreen();
-		unsubProps();
+		unsubCamera();
 	});
 </script>
 
@@ -214,33 +193,39 @@
 			in={fade}
 			out={fade}
 		></Desktop>
-	
-			<T.Mesh
+
+		<!-- <T.Mesh
 				on:create={(ref) => {
 					helperCube = ref;
 				}}
-				position.y={1}
+				position={[17, 53 ,-23]}
 			>
 				<T.BoxGeometry args={[1, 2, 1]} />
 				<T.MeshBasicMaterial color="hotpink" />
-			</T.Mesh>
-		
-		<Align precise="true" position={[-20, 16, -35]} rotation.y={-0.4}>
+			</T.Mesh> -->
+		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
+		<Align
+			auto
+			precise="true"
+			on:align={({ boundingBox }) => {
+				if ($wunderkammerRef) {
+					boundingBox = $wunderkammerRef.boundingBox;
+				}
+			}}
+			position={[-20, 15, -35]}
+			rotation.y={-0.4}
+			let:align
+		>
 			<Wunderkammer
-				in={corkscrew}
 				on:click={() => {
 					if ($wunderkammerRef) {
 						if (!doorsOpen) {
-							$cameraControls.setTarget(-20, 16, -35, true).then(() => {
-								$cameraControls.moveTo(-20, 16, -35, true).then(() => {
-									$cameraControls.fitToBox($wunderkammerRef, true);
-									propsActions.setDoors(true);
-								});
+							$cameraControls.rotateAzimuthTo(30 * THREE.MathUtils.DEG2RAD, true).then(() => {
+								$cameraControls.fitToBox($wunderkammerRef, true);
 							});
 						} else if (doorsOpen) {
 							$cameraControls.setLookAt(-100, 40, 30, 0, 1, 0, true).then(() => {
 								$cameraControls.zoomTo(10, true);
-								propsActions.setDoors(false);
 							});
 						}
 					}
@@ -248,9 +233,10 @@
 				on:pointerenter={onPointerEnter}
 				on:pointerleave={onPointerLeave}
 			/>
-			{#if $sceneTransform.url}
+			{#if $modelTransform.url}
 				<Model
 					on:create={({ ref, cleanup }) => {
+						align();
 						cleanup(() => {
 							console.log('Model cleanup initiated');
 						});
@@ -266,28 +252,31 @@
 						isModelLoading = false;
 						modelActions.setModelUrl(null);
 					}}
+					position.y={10}
 				/>
 			{/if}
 		</Align>
 	</T.Group>
 	<Stars speed={3} count={starCount} />
 {/if}
-<T.OrthographicCamera
-	args={[innerWidth / -2, innerWidth / 2, innerHeight / 2, innerHeight / -2, 1, 4000]}
-	makeDefault
->
-	<CameraControls
-		on:create={({ ref }) => {
-			$cameraControls = ref;
-			if (showUi) {
-				ref.zoomTo(1, true);
-			} else {
-				ref.setLookAt(-100, 40, 30, 0, 1, 0, true);
-				ref.zoomTo(10, true);
-			}
-		}}
-	/>
-</T.OrthographicCamera>
+{#if innerHeight && innerWidth}
+	<T.OrthographicCamera
+		args={[innerWidth / -2, innerWidth / 2, innerHeight / 2, innerHeight / -2, 1, 4000]}
+		makeDefault
+	>
+		<CameraControls
+			on:create={({ ref }) => {
+				$cameraControls = ref;
+				if (showUi) {
+					ref.zoomTo(1, true);
+				} else {
+					ref.setLookAt(-100, 40, 30, 0, 1, 0, true);
+					ref.zoomTo(10, true);
+				}
+			}}
+		/>
+	</T.OrthographicCamera>
+{/if}
 <Sky
 	setEnvironment
 	turbidity={3}

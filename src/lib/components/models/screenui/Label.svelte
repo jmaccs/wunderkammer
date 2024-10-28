@@ -15,7 +15,8 @@
 		s: 6,
 		m: 8,
 		l: 10,
-		xl: 12
+		xl: 12,
+		xxl: 20
 	};
 
 	function getScaledSize(size) {

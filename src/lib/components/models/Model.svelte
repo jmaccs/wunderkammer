@@ -1,10 +1,10 @@
 <script>
 	import { T } from '@threlte/core';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-	import { sceneTransform, screenActions } from '../utils/stores';
+	import { modelTransform, screenActions } from '../utils/stores';
 	import { modelProcessor } from '../utils/modelUtils';
 	import * as THREE from 'three';
-	import {TransformControls} from '@threlte/extras';
+	import { TransformControls } from '@threlte/extras';
 
 	let model = null;
 	let isLoading = true;
@@ -13,6 +13,7 @@
 	let modelReady = false;
 	const dispatch = createEventDispatcher();
 	export const ref = new THREE.Group();
+
 	function cleanup() {
 		console.log('Model: Cleaning up resources');
 		try {
@@ -41,10 +42,10 @@
 		mounted = true;
 	});
 
-	const unsubTransform = sceneTransform.subscribe((transform) => {
+	const unsubTransform = modelTransform.subscribe((transform) => {
 		if (!mounted) return;
 
-		console.log('Model: Scene transform updated', transform);
+		console.log('Model: transform updated', transform);
 		try {
 			if (transform && transform.url) {
 				if (currentLoadingUrl !== transform.url) {
@@ -81,14 +82,9 @@
 			}
 
 			model = processedModel;
-			
-			// Apply transformations to the scene directly
-			if ($sceneTransform.scale) {
-				model.scene.scale.set(
-					$sceneTransform.scale,
-					$sceneTransform.scale,
-					$sceneTransform.scale
-				);
+
+			if ($modelTransform.scale) {
+				model.scene.scale.set($modelTransform.scale);
 			}
 
 			isLoading = false;
@@ -129,11 +125,9 @@
 </script>
 
 {#if model && !isLoading && mounted && modelReady}
-
-	<T.Group is={ref} dispose={false} {...$$restProps} >
+	<T.Group is={ref} dispose={false} {...$$restProps}>
 		<T.Mesh>
 			<T is={model.scene} />
 		</T.Mesh>
 	</T.Group>
-
 {/if}

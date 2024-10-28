@@ -3,145 +3,107 @@
 	import { screenActions } from './utils/stores';
 	import Scene from './Scene.svelte';
 	import { logStore } from './utils/stores.js';
-	import { fade, fly } from 'svelte/transition';
-	import {Pane, Slider, Folder} from 'svelte-tweakpane-ui';
-	import { sceneTransform, sceneActions } from './utils/stores.js';
-	
+	import { fade } from 'svelte/transition';
+	import { tweened } from 'svelte/motion';
+	import { Pane, Slider, Folder, Checkbox } from 'svelte-tweakpane-ui';
+	import { modelTransform, sceneActions } from './utils/stores.js';
+	import { useProgress } from '@threlte/extras';
+
+	const { progress } = useProgress();
 	let logContainer;
 
-	$: visibleLogs = $logStore.slice(-50);
+	$: visibleLogs = $logStore.slice(-100);
 
 	$: if (logContainer) {
 		logContainer.scrollTop = logContainer.scrollHeight;
 	}
 
-	const logColors = {
-		info: '#ffffff',
-		error: '#ff5555',
-		progress: '#4CAF50'
-	};
+	const tweenedProgress = tweened($progress, {
+		duration: 800
+	});
+	$: tweenedProgress.set($progress);
+
+	$: if ($progress === 1) {
+		logStore.clear();
+		setTimeout(() => {
+			visibleLogs = [];
+		}, 5000);
+	}
+
 	let innerWidth;
 	let innerHeight;
 	$: screenActions.setScreenSize(innerWidth, innerHeight);
 
-	let scale = $sceneTransform.scale;
-	let positionX = $sceneTransform.position[0];
-	let positionY = $sceneTransform.position[1];
-	let positionZ = $sceneTransform.position[2];
-	let rotationX = $sceneTransform.rotation[0];
-	let rotationY = $sceneTransform.rotation[1];
-	let rotationZ = $sceneTransform.rotation[2];
+	let scale = $modelTransform.scale;
+	let positionX = $modelTransform.position[0];
+	let positionY = $modelTransform.position[1];
+	let positionZ = $modelTransform.position[2];
+	let rotationX = $modelTransform.rotation[0];
+	let rotationY = $modelTransform.rotation[1];
+	let rotationZ = $modelTransform.rotation[2];
+	let autoRotate = $modelTransform.autoRotate;
 
 	$: sceneActions.updateTransform({
 		scale,
 		position: [positionX, positionY, positionZ],
-		rotation: [rotationX, rotationY, rotationZ]
+		rotation: [rotationX, rotationY, rotationZ],
+		autoRotate
 	});
 </script>
 
-<!-- {#if visibleLogs.length > 1}
-	<div class="logs-container" bind:this={logContainer}>
-		{#each visibleLogs as log (log.id)}
-			<div
-				class="log-entry"
-				class:error={log.type === 'error'}
-				class:progress={log.type === 'progress'}
-				transition:fade={{ duration: 200 }}
-			>
-				<span class="timestamp">{log.timestamp}</span>
-
-				{#if log.type === 'progress'}
-					<div class="progress-entry">
-						<span>{log.message}</span>
-						<div class="progress-bar">
-							<div class="progress-fill" style="width: {log.progress}%"></div>
-						</div>
-						<span class="progress-value">{log.progress.toFixed(1)}%</span>
-					</div>
-				{:else}
-					<span>{log.message}</span>
-				{/if}
-			</div>
-		{/each}
-	</div>
-{/if} -->
-
-<!-- <Pane title="Model Controls" expanded={false} position="bottom-right">
+<svelte:window bind:innerWidth bind:innerHeight />
+<Pane title="Model Controls" expanded={false} position="bottom-right">
 	<Slider label="Scale" bind:value={scale} min={0.1} max={5} step={0.1} />
 	<Folder title="Position">
-		<Slider label="X" bind:value={positionX} min={-10} max={10} step={0.1} />
-		<Slider label="Y" bind:value={positionY} min={-10} max={10} step={0.1} />
-		<Slider label="Z" bind:value={positionZ} min={-10} max={10} step={0.1} />
+		<Slider label="X" bind:value={positionX} min={-50} max={50} step={0.1} />
+		<Slider label="Y" bind:value={positionY} min={-50} max={50} step={0.1} />
+		<Slider label="Z" bind:value={positionZ} min={-50} max={50} step={0.1} />
 	</Folder>
 	<Folder title="Rotation">
 		<Slider label="X" bind:value={rotationX} min={-Math.PI} max={Math.PI} step={0.1} />
 		<Slider label="Y" bind:value={rotationY} min={-Math.PI} max={Math.PI} step={0.1} />
 		<Slider label="Z" bind:value={rotationZ} min={-Math.PI} max={Math.PI} step={0.1} />
 	</Folder>
-</Pane> -->
+	<Checkbox label="Auto Rotate" bind:value={autoRotate} />
+</Pane>
 
-<svelte:window bind:innerWidth bind:innerHeight />
-<div class="scene">
+<div class="h-full relative">
+	{#key visibleLogs.length}
+		{#if visibleLogs.length > 1}
+			<div
+				class="absolute inset-x-0 top-0 h-32 bg-slate-200/80 backdrop-blur-sm overflow-y-auto border-black border-4"
+				bind:this={logContainer}
+			>
+				<slot name="loading">
+					{#each visibleLogs as log (log.id)}
+						<div
+							class="p-2 {log.type === 'error' ? 'text-red-500' : 'text-white'}"
+							transition:fade={{ duration: 200 }}
+						>
+							<span class="text-xs opacity-50">{log.timestamp}</span>
+							<div class="flex flex-col gap-4 items-center font-mono text-lg">
+								<span>{log.message}</span>
+							</div>
+							{#if $tweenedProgress < 1}
+								<div
+									transition:fade|local={{
+										duration: 200
+									}}
+									class="w-full bg-gray-200 rounded-full h-2.5 mt-2"
+								>
+									<div
+										class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+										style="width: {$tweenedProgress * 100}%"
+									/>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</slot>
+			</div>
+		{/if}
+	{/key}
 	<Canvas>
 		<Scene {innerWidth} {innerHeight} />
 	</Canvas>
 </div>
-
-<style>
-	.scene {
-		height: 100%;
-		position:relative
-	}
-	.logs-container {
-		background: #1a1a1a;
-		border-radius: 4px;
-		padding: 1rem;
-		width: full;
-		height:full;
-		overflow-y: auto;
-		font-family: monospace;
-		color: #e0e0e0;
-	}
-
-	.log-entry {
-		padding: 0.25rem 0;
-		display: flex;
-		gap: 1rem;
-		align-items: flex-start;
-	}
-
-	.timestamp {
-		color: #666;
-		font-size: 0.9em;
-	}
-
-	.error {
-		color: #ff5555;
-	}
-
-	.progress-entry {
-		flex: 1;
-		display: flex;
-		gap: 1rem;
-		align-items: center;
-	}
-
-	.progress-bar {
-		flex: 1;
-		height: 6px;
-		background: #333;
-		border-radius: 3px;
-		overflow: hidden;
-	}
-
-	.progress-fill {
-		height: 100%;
-		background: #4caf50;
-		transition: width 0.3s ease;
-	}
-
-	.progress-value {
-		min-width: 4em;
-		text-align: right;
-	}
-</style>

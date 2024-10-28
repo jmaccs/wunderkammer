@@ -42,7 +42,7 @@
 		</Box>
 
 		<Box class="h-full w-auto flex-1 items-center justify-center">
-			<Label text={title} z={20} fontStyle="semi-bold" fontSize={'xl'} color="#454649" />
+			<Label text={title} z={20}  fontSize={'xl'} color="#454649" />
 		</Box>
 	</Box>
 

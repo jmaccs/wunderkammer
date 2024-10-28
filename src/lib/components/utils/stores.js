@@ -10,12 +10,12 @@ const initialModelData = {
 	thumbnail: null,
 	image: null
 };
-const initialSceneState = {
+const initialModelState = {
 	scale: 1,
-	position: [0, 3, 0],
+	position: [-20, 15, -35],
 	rotation: [0, 0, 0],
+	autoRotate: false,
 	url: null
-
 };
 
 const initialScreenState = {
@@ -36,16 +36,16 @@ export const cameraValues = writable({
 
 export const modelList = writable([]);
 export const selectedModel = writable(initialModelData);
-export const sceneTransform = writable(initialSceneState);
+export const modelTransform = writable(initialModelState);
 export const screenState = writable(initialScreenState);
 
 export const activeScene = derived(
-	[selectedModel, sceneTransform],
-	([$selectedModel, $sceneTransform]) => {
+	[selectedModel, modelTransform],
+	([$selectedModel, $modelTransform]) => {
 		if (!$selectedModel) return null;
 		return {
 			model: $selectedModel,
-			transform: $sceneTransform
+			transform: $modelTransform
 		};
 	}
 );
@@ -72,23 +72,23 @@ export const modelActions = {
 	},
 
 	setModelUrl(url) {
-		sceneTransform.update((state) => ({ ...state, url }));
+		modelTransform.update((state) => ({ ...state, url }));
 	}
 };
 
 export const sceneActions = {
-	updateTransform({ scale, position, rotation }) {
-		sceneTransform.update((state) => ({
+	updateTransform({ scale, position, rotation, autoRotate }) {
+		modelTransform.update((state) => ({
 			...state,
 			...(scale !== undefined && { scale }),
 			...(position !== undefined && { position }),
 			...(rotation !== undefined && { rotation }),
-		
+			...(autoRotate !== undefined && { autoRotate })
 		}));
 	},
 
 	resetTransform() {
-		sceneTransform.set(initialSceneState);
+		modelTransform.set(initialModelState);
 	}
 };
 export const screenActions = {
@@ -109,6 +109,9 @@ export const screenActions = {
 			screenSize: { innerWidth: innerWidth, innerHeight: innerHeight }
 		}));
 	},
+	setDoors(isOpen) {
+		screenState.update((state) => ({ ...state, doorsOpen: isOpen }));
+	},
 
 	reset() {
 		screenState.set(initialScreenState);
@@ -117,7 +120,7 @@ export const screenActions = {
 export function resetAllStores() {
 	modelList.set([]);
 	selectedModel.set(null);
-	sceneTransform.set(initialSceneState);
+	modelTransform.set(initialModelState);
 	screenState.set(initialScreenState);
 }
 
@@ -147,17 +150,7 @@ function createLogStore() {
 					type: 'error'
 				}
 			]),
-		addProgress: (message, progress) =>
-			update((logs) => [
-				...logs,
-				{
-					id: `${logIndex++}_${Date.now()}`,
-					timestamp: new Date().toLocaleTimeString(),
-					message,
-					progress,
-					type: 'progress'
-				}
-			]),
+
 		clear: () => {
 			logIndex = 0;
 			set([]);
@@ -173,15 +166,3 @@ export const cameraControls = writable(undefined);
 export const desktop = writable(undefined);
 export const room = writable(undefined);
 export const wunderkammerRef = writable(undefined);
-
-const initialPropsData = {
-	doorsOpen: false
-}
-
-export const propsState = writable(initialPropsData);
-
-export const propsActions = {
-	setDoors(isOpen) {
-		propsState.update((state)=> ({...state, doorsOpen: isOpen}))
-	}
-}

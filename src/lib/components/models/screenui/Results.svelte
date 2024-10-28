@@ -16,6 +16,7 @@
 	export let thumbZoom = 0.7;
 	export let width;
 	export let height;
+	export let categories;
 
 	$: boxSize = {
 		width: Math.round(width / 20),
@@ -78,12 +79,12 @@
 	</T.Mesh>
 	{#if $hovering && description}
 		<HTML in={scaleTransition} out={scaleTransition}>
-			<div class="absolute h-auto w-auto max-w-screen opacity-80 text-wrap bg-gray-600 ">
+			<div class="absolute h-auto w-auto max-w-screen opacity-80 text-wrap ">
 				<div
 					class="bg-gray-50 p-10 border-black border-2 rounded-md !aspect-video max-w-full max-h-full divide-y divide-current"
 				>
 					<div>
-						<h1 class="text-gray-800 font-serif text-center text-sm mb-2">{description}</h1>
+						<h1 class="text-gray-800  text-center text-sm mb-2">{description}</h1>
 					</div>
 					<div class="p-4">
 						<p>{title}</p>
