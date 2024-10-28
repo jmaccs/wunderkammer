@@ -1,12 +1,13 @@
 <script>
 	import { Box, useReflow } from '@threlte/flex';
 	import { getAllModels } from '../../utils/api.js';
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { modelActions } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Label from './Label.svelte';
 	import { HTML, Text } from '@threlte/extras';
 
+	const dispatch = createEventDispatcher();
 	let modelList = [];
 	let filteredModels = [];
 	let searchTerm = '';
@@ -47,8 +48,7 @@
 	});
 
 	function handleSelect(event) {
-		const selectedId = event.detail.value;
-		console.log('Selected model:', selectedId);
+		dispatch('select', event.detail);
 	}
 </script>
 
@@ -62,10 +62,11 @@
 					bind:value={searchTerm}
 					placeholder="Search models..."
 					class="w-[200px] h-[100px] px-8 rounded-lg bg-gray-800 text-white border-4 border-gray-600 focus:outline-none focus:border-blue-500 text-4xl font-bold placeholder-gray-500"
+					autofocus
 				/>
 			</div>
 		</HTML>
-		<Text text={searchTerm} fontSize={100} color="white" position.z={20} />
+		<Text text={searchTerm} fontSize={80} color="white" position.z={20} />
 	</Box>
 
 	{#if isLoading}
@@ -86,7 +87,7 @@
 							{@const model = filteredModels[index]}
 							{@const url = model.thumbnail}
 							{@const title = model.title}
-                            {@const categories = model.categories}
+							{@const categories = model.categories}
 							{@const description = model.owner || null}
 							{@const id = model.uid}
 							{@const thumbZoom = 0.7}
@@ -102,7 +103,7 @@
 									{id}
 									{thumbZoom}
 									{index}
-                                    {categories}
+									{categories}
 								/>
 							</Box>
 						{/if}

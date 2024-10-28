@@ -28,7 +28,8 @@
 		modelTransform,
 		cameraControls,
 		activeScene,
-		room
+		room,
+		logStore
 	} from './utils/stores.js';
 	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
@@ -40,27 +41,19 @@
 	import CameraControls from './Camera-Controls.svelte';
 
 	const { hovering, onPointerEnter, onPointerLeave } = useCursor();
-	let modelUrl = '';
-
 	let macbookScale = spring(1);
 	let rotation;
 	let showModel;
 	let showUi = false;
 	let currentScreen;
 	let doorsOpen;
-	let model = null;
-	let isModelLoading = false;
-
-	let starCount;
 	let modelRef;
 	let view;
 	export let innerWidth;
 	export let innerHeight;
 	$: view = $screenState.isOpen ? 'ui' : 'scene';
 	interactivity();
-	extend({
-		OrbitControls
-	});
+	extend({ OrbitControls });
 
 	const { renderStage, autoRender, renderer, scene, camera, invalidate } = useThrelte();
 
@@ -69,9 +62,6 @@
 		currentScreen = $screenState.currentPage;
 		showModel = $screenState.isModelLoaded;
 		doorsOpen = $screenState.doorsOpen;
-		if (!showModel) {
-			cleanupModel();
-		}
 
 		if ($cameraControls) {
 			if (showUi) {
@@ -82,24 +72,8 @@
 			}
 		}
 	});
-	const unsubCamera = cameraControls.subscribe(($cameraControls) => {});
-	function cleanupModel() {
-		if (model && model.scene) {
-			model.traverse((child) => {
-				if (child.geometry) {
-					child.geometry.dispose();
-				}
-				if (child.material) {
-					if (Array.isArray(child.material)) {
-						child.material.forEach((material) => material.dispose());
-					} else {
-						child.material.dispose();
-					}
-				}
-			});
-			model = null;
-		}
-	}
+
+	const unsubCamera = cameraControls.subscribe(() => {});
 
 	const fade = createTransition((ref) => {
 		if (!ref.transparent) ref.transparent = true;
@@ -121,7 +95,7 @@
 			screenActions.setModelLoadState(false);
 		}
 	}
-	let helperCube;
+
 	useTask(
 		async () => {
 			await tick();
@@ -142,7 +116,7 @@
 		position={[0, 0, 0]}
 		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
-				console.log('screen cleanup');
+				logStore.addLog('Screen cleanup');
 			});
 		}}
 		{innerWidth}
@@ -152,7 +126,7 @@
 	<T.Group
 		on:create={({ ref, cleanup }) => {
 			cleanup(() => {
-				console.log('room cleanup');
+				logStore.addLog('Room cleanup');
 			});
 		}}
 		castShadow
@@ -167,8 +141,7 @@
 			cellSize={2}
 		/>
 
-		<Room rotation.y={-2} in={fade} out={fade}></Room>
-
+		<Room rotation.y={-2} in={fade} out={fade} />
 		<Upright />
 		<Desktop
 			on:create={(ref) => {
@@ -178,9 +151,7 @@
 					$cameraControls.zoomTo(0.7, true);
 				}
 			}}
-			on:click={() => {
-				handleOpenUi();
-			}}
+			on:click={handleOpenUi}
 			on:pointerenter={() => {
 				onPointerEnter();
 				macbookScale.set(1.1);
@@ -191,13 +162,13 @@
 			}}
 			in={fade}
 			out={fade}
-		></Desktop>
+		/>
 
 		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
 	</T.Group>
-<Align auto position={[-15, 15, -40]}>
+
 	<Wunderkammer
-		
+		position={[-15, 0, -35]}
 		rotation.y={-0.4}
 		on:click={() => {
 			if ($wunderkammerRef) {
@@ -217,30 +188,23 @@
 	/>
 	{#if $modelTransform.url && $wunderkammerRef}
 		<Model
-			on:create={({ ref, cleanup }) => {
-				modelRef = ref;
-
-				cleanup(() => {
-					console.log('Model cleanup initiated');
-				});
-			}}
-			on:load={({}) => {
-				isModelLoading = false;
-
-				console.log('Model loaded successfully');
+			position.y={5}
+			rotation.y={rotation}
+			on:create
+			on:load={({ detail }) => {
+				logStore.addLog('Model loaded successfully');
 				invalidate();
 			}}
 			on:error={(e) => {
-				console.error('Model loading error:', e);
-				isModelLoading = false;
+				logStore.addError('Model loading error: ' + e.detail);
 				modelActions.setModelUrl(null);
 			}}
-			position.y={5}
 		/>
 	{/if}
-</Align>
-	<Stars speed={3} count={starCount} />
+
+	<Stars speed={3} count={10000} />
 {/if}
+
 {#if innerHeight && innerWidth}
 	<T.OrthographicCamera
 		args={[innerWidth / -2, innerWidth / 2, innerHeight / 2, innerHeight / -2, 1, 4000]}
@@ -259,6 +223,7 @@
 		/>
 	</T.OrthographicCamera>
 {/if}
+
 <Sky
 	setEnvironment
 	turbidity={3}

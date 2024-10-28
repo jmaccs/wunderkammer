@@ -1,39 +1,70 @@
 <script>
 	import { T } from '@threlte/core';
-	import { GLTF } from '@threlte/extras';
-	import { createEventDispatcher } from 'svelte';
-	import { modelTransform, screenActions, logStore } from '../utils/stores';
+	import { GLTF, useProgress } from '@threlte/extras';
+	import { createEventDispatcher, onDestroy } from 'svelte';
 	import * as THREE from 'three';
-import { useProgress } from '@threlte/extras';
-const { progress } = useProgress();
-	export const ref = new THREE.Group();
-	const dispatch = createEventDispatcher();
+	import { modelTransform, screenActions, logStore } from '../utils/stores';
 
-	function handleLoading(e) {
-		const progress = Math.round(progress * 100);
-		logStore.addLog(`Loading model: ${progress}%`);
+	const dispatch = createEventDispatcher();
+	const { progress } = useProgress();
+	let modelRef = new THREE.Group();
+
+	$: if ($progress) {
+		handleProgress($progress);
+	}
+
+	function handleProgress(value) {
+		const progressPercent = Math.round(value * 100);
+		logStore.addLog(`Loading model: ${progressPercent}%`);
 	}
 
 	function handleError(e) {
-		logStore.addError(`Failed to load model: ${message}`);
+		logStore.addError(`Failed to load model: ${e.message}`);
 		screenActions.setModelLoadState(false);
 		dispatch('error', e);
 	}
 
-	function handleLoad(e) {
+	function handleLoaded(e) {
 		logStore.addLog('Model loaded successfully');
 		screenActions.setModelLoadState(true);
-		dispatch('load', e);
+		dispatch('load', {
+			model: e.detail,
+			scene: e.detail.scene
+		});
 	}
+
+	function cleanupModel() {
+		if (modelRef) {
+			modelRef.traverse((child) => {
+				if (child.geometry) {
+					child.geometry.dispose();
+				}
+				if (child.material) {
+					if (Array.isArray(child.material)) {
+						child.material.forEach((material) => material.dispose());
+					} else {
+						child.material.dispose();
+					}
+				}
+			});
+		}
+		logStore.addLog('Model resources cleaned up');
+	}
+
+	onDestroy(cleanupModel);
 </script>
 
-<T.Group is={ref} dispose={false} {...$$restProps}>
+<T.Group 
+	bind:ref={modelRef} 
+	dispose={false} 
+	{...$$restProps}
+	on:create
+>
 	{#if $modelTransform.url}
-		<GLTF
+		<GLTF 
 			url={$modelTransform.url}
-			on:loading={handleLoading}
 			on:error={handleError}
-			on:loaded={handleLoad}
+			on:loaded={handleLoaded}
 		/>
 	{/if}
 </T.Group>

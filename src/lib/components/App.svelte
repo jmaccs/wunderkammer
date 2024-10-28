@@ -8,6 +8,7 @@
 	import { Pane, Slider, Folder, Checkbox } from 'svelte-tweakpane-ui';
 	import { modelTransform, sceneActions } from './utils/stores.js';
 	import { useProgress } from '@threlte/extras';
+	import { onDestroy } from 'svelte';
 
 	const { progress } = useProgress();
 	let logContainer;
@@ -24,8 +25,8 @@
 	$: tweenedProgress.set($progress);
 
 	$: if ($progress === 1) {
-		logStore.clear();
 		setTimeout(() => {
+			logStore.clear();
 			visibleLogs = [];
 		}, 5000);
 	}
@@ -48,6 +49,10 @@
 		position: [positionX, positionY, positionZ],
 		rotation: [rotationX, rotationY, rotationZ],
 		autoRotate
+	});
+
+	onDestroy(() => {
+		logStore.clear();
 	});
 </script>
 
