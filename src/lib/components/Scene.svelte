@@ -170,6 +170,7 @@
 
 		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
 	</T.Group>
+	<T.Group >
 	<Wunderkammer
 		position={[-15, 0, -35]}
 		rotation.y={-0.4}
@@ -190,14 +191,10 @@
 		on:pointerleave={onPointerLeave}
 	/>
 
-	<Align auto x={-5} y={3} z={-7}>
-		{#if $modelTransform.url}
-	
-				<Model scale={$modelTransform.scale} />
-		
-		{/if}
-	</Align>
-
+	{#if $modelTransform.url}
+		<Model position={[-20, 8, -30]} />
+	{/if}
+</T.Group>
 	<Stars speed={3} count={10000} />
 {/if}
 

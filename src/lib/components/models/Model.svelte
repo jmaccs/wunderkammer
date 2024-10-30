@@ -1,7 +1,7 @@
 <script>
 	import { T, forwardEventHandlers } from '@threlte/core';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-	import { modelTransform, screenActions } from '../utils/stores';
+	import { modelTransform, screenActions, wunderkammerRef } from '../utils/stores';
 	import { modelProcessor } from '../utils/modelUtils';
 
 	import * as THREE from 'three';
@@ -13,6 +13,7 @@
 	let modelReady = false;
 	const dispatch = createEventDispatcher();
 	const component = forwardEventHandlers();
+
 	function cleanup() {
 		console.log('Model: Cleaning up resources');
 		try {
@@ -39,6 +40,36 @@
 	onMount(() => {
 		console.log('Model: Component mounted');
 		mounted = true;
+	});
+
+	
+	const unsubWunderkammer = wunderkammerRef.subscribe((ref) => {
+		if (!ref || !model || !model.scene) return;
+
+	 
+		const cabinetBox = new THREE.Box3().setFromObject(ref);
+		const cabinetSize = new THREE.Vector3();
+		cabinetBox.getSize(cabinetSize);
+		const cabinetCenter = new THREE.Vector3();
+		cabinetBox.getCenter(cabinetCenter);
+
+		model.scene.position.set(
+			cabinetCenter.x,
+			cabinetCenter.y + cabinetSize.y * 0.4,
+			cabinetCenter.z
+		);
+
+		const modelBox = new THREE.Box3().setFromObject(model.scene);
+		const modelSize = new THREE.Vector3();
+		modelBox.getSize(modelSize);
+
+		const margin = 0.8;
+		const scaleX = (cabinetSize.x * margin) / modelSize.x;
+		const scaleY = (cabinetSize.y * margin) / modelSize.y;
+		const scaleZ = (cabinetSize.z * margin) / modelSize.z;
+		const scale = Math.min(scaleX, scaleY, scaleZ);
+
+		model.scene.scale.set(scale, scale, scale);
 	});
 
 	const unsubTransform = modelTransform.subscribe((transform) => {
@@ -81,11 +112,6 @@
 			}
 
 			model = processedModel;
-
-			// if ($modelTransform.scale) {
-			// 	model.scene.scale.set($modelTransform.scale, $modelTransform.scale, $modelTransform.scale);
-			// }
-
 			isLoading = false;
 			modelReady = true;
 			console.log('Model: load completed successfully');
@@ -116,6 +142,9 @@
 		if (unsubTransform) {
 			unsubTransform();
 		}
+		if (unsubWunderkammer) {
+			unsubWunderkammer();
+		}
 	});
 
 	$: if (model && model.scene) {
@@ -125,7 +154,5 @@
 </script>
 
 {#if model && !isLoading && mounted && modelReady}
-	
-		<T.Mesh is={model.scene} bind:this={$component} {...$$restProps} />
-
+	<T is={model.scene} bind:this={$component} {...$$restProps} />
 {/if}

@@ -11,7 +11,7 @@ const initialModelData = {
 	image: null
 };
 const initialModelState = {
-	scale: 5,
+	scale: 3,
 	position: [-20, 15, -35],
 	rotation: [0, 0, 0],
 	autoRotate: false,
