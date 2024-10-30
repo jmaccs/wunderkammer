@@ -13,7 +13,7 @@
 	const { progress } = useProgress();
 	let logContainer;
 
-	$: visibleLogs = $logStore.slice(-100);
+	$: visibleLogs = $logStore
 
 	$: if (logContainer) {
 		logContainer.scrollTop = logContainer.scrollHeight;

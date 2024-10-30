@@ -17,9 +17,9 @@ export class ModelProcessor {
 			logStore.addError('ModelProcessor: No URL provided');
 			throw new Error('No URL provided');
 		}
-
-		console.log(`ModelProcessor: Processing model from SketchFab`);
-		logStore.addLog(`ModelProcessor: Processing model from SketchFab`);
+		let truncatedUrl = url.slice(15) + '...';
+		console.log(`ModelProcessor: Processing model from ${truncatedUrl}`);
+		logStore.addLog(`ModelProcessor: Processing model from ${truncatedUrl}`);
 
 		const { targetSize = 10, center = true } = options;
 
@@ -40,11 +40,11 @@ export class ModelProcessor {
 
 			const processedModel = this.normalizeModel(gltf, { targetSize, center });
 
+			// Ensure materials are properly set up
 			this.traverseMeshes(processedModel.scene, (mesh) => {
 				mesh.castShadow = true;
 				mesh.receiveShadow = true;
 				if (mesh.material) {
-					this.handleSpecularGlossiness(mesh);
 					mesh.material.needsUpdate = true;
 				}
 			});
@@ -55,38 +55,6 @@ export class ModelProcessor {
 			console.error('ModelProcessor: Error processing model:', error);
 			logStore.addError('ModelProcessor: Error processing model:', error);
 			throw error;
-		}
-	}
-
-	handleSpecularGlossiness(mesh) {
-		try {
-			if (mesh.material?.extensions?.KHR_materials_pbrSpecularGlossiness) {
-				console.log('ModelProcessor: Converting KHR Specular Glossiness material');
-				logStore.addLog('ModelProcessor: Converting KHR Specular Glossiness material');
-
-				const oldMaterial = mesh.material;
-				const newMaterial = new THREE.MeshStandardMaterial({
-					color: oldMaterial.color || new THREE.Color(1, 1, 1),
-					map: oldMaterial.map,
-					normalMap: oldMaterial.normalMap,
-					roughness: oldMaterial.roughness !== undefined ? oldMaterial.roughness : 0.5,
-					metalness: oldMaterial.metalness !== undefined ? oldMaterial.metalness : 0.5,
-					transparent: oldMaterial.transparent,
-					opacity: oldMaterial.opacity
-				});
-
-				mesh.material = newMaterial;
-			}
-		} catch (error) {
-			console.warn('ModelProcessor: Error handling Specular Glossiness material:', error);
-			logStore.addError('ModelProcessor: Error handling Specular Glossiness material:', error);
-
-			// Fallback to basic material if material processing fails
-			mesh.material = new THREE.MeshStandardMaterial({
-				color: new THREE.Color(0.8, 0.8, 0.8),
-				roughness: 0.5,
-				metalness: 0.5
-			});
 		}
 	}
 
@@ -101,7 +69,7 @@ export class ModelProcessor {
 						resolve(gltf);
 					},
 					(progress) => {
-						const percent = ((progress.loaded / progress.total) * 100).toFixed();
+						const percent = ((progress.loaded / progress.total) * 100).toFixed(2);
 						console.log(`ModelProcessor: Loading progress: ${percent}%`);
 						logStore.addLog(`ModelProcessor: Loading progress: ${percent}%`);
 					},
@@ -128,11 +96,11 @@ export class ModelProcessor {
 		try {
 			const scene = gltf.scene;
 
+			// Reset transformations
 			scene.position.set(0, 0, 0);
 			scene.rotation.set(0, 0, 0);
 			scene.scale.set(1, 1, 1);
 			scene.updateMatrix();
-			scene.updateMatrixWorld(true);
 
 			const box = new THREE.Box3().setFromObject(scene);
 			const size = box.getSize(new THREE.Vector3());
@@ -144,6 +112,7 @@ export class ModelProcessor {
 				return gltf;
 			}
 
+			
 			const scale = targetSize / maxDimension;
 			scene.scale.set(scale, scale, scale);
 
@@ -152,9 +121,11 @@ export class ModelProcessor {
 				scene.position.copy(center).multiplyScalar(-scale);
 			}
 
+			
 			scene.updateMatrix();
 			scene.updateMatrixWorld(true);
 
+	
 			box.setFromObject(scene);
 
 			gltf.userData = {

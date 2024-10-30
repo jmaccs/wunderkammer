@@ -38,7 +38,7 @@
 				out={scaleTransition}
 				on:create={({ cleanup }) => {
 					cleanup(() => {
-						console.log('Model cleanup');
+						console.log('Model UI page cleanup');
 					});
 				}}
 				bind:this={$component}

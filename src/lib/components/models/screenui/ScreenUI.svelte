@@ -78,7 +78,7 @@
 			if (!currentModel) return null;
 
 			const url = await fetchModels(currentModel.uid);
-			console.log(currentModel);
+			console.log(url);
 			return url;
 		} catch (error) {
 			console.error('Failed to load model:', error);
@@ -87,15 +87,15 @@
 	}
 
 	async function handleLoadTransition() {
-		// First clear any existing model
+		
 		modelActions.setModelUrl(null);
 		screenActions.setModelLoadState(false);
 
-		// Then get and load the new model
+		
 		const url = await getModel();
 		if (url) {
 			screenActions.toggleScreen(false);
-			// Wait a tick to ensure UI is closed before loading model
+		
 			await tick();
 			modelActions.setModelUrl(url);
 			screenActions.setModelLoadState(true);

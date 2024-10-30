@@ -186,20 +186,8 @@
 		on:pointerenter={onPointerEnter}
 		on:pointerleave={onPointerLeave}
 	/>
-	{#if $modelTransform.url && $wunderkammerRef}
-		<Model
-			position.y={5}
-			rotation.y={rotation}
-			on:create
-			on:load={({ detail }) => {
-				logStore.addLog('Model loaded successfully');
-				invalidate();
-			}}
-			on:error={(e) => {
-				logStore.addError('Model loading error: ' + e.detail);
-				modelActions.setModelUrl(null);
-			}}
-		/>
+	{#if $modelTransform.url}
+		<Model />
 	{/if}
 
 	<Stars speed={3} count={10000} />

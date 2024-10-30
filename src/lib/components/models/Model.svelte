@@ -1,70 +1,129 @@
 <script>
 	import { T } from '@threlte/core';
-	import { GLTF, useProgress } from '@threlte/extras';
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { modelTransform, screenActions } from '../utils/stores';
+	import { modelProcessor } from '../utils/modelUtils';
 	import * as THREE from 'three';
-	import { modelTransform, screenActions, logStore } from '../utils/stores';
 
+	let model = null;
+	let isLoading = true;
+	let currentLoadingUrl = null;
+	let mounted = false;
+	let modelReady = false;
 	const dispatch = createEventDispatcher();
-	const { progress } = useProgress();
-	let modelRef = new THREE.Group();
 
-	$: if ($progress) {
-		handleProgress($progress);
-	}
-
-	function handleProgress(value) {
-		const progressPercent = Math.round(value * 100);
-		logStore.addLog(`Loading model: ${progressPercent}%`);
-	}
-
-	function handleError(e) {
-		logStore.addError(`Failed to load model: ${e.message}`);
-		screenActions.setModelLoadState(false);
-		dispatch('error', e);
-	}
-
-	function handleLoaded(e) {
-		logStore.addLog('Model loaded successfully');
-		screenActions.setModelLoadState(true);
-		dispatch('load', {
-			model: e.detail,
-			scene: e.detail.scene
-		});
-	}
-
-	function cleanupModel() {
-		if (modelRef) {
-			modelRef.traverse((child) => {
-				if (child.geometry) {
-					child.geometry.dispose();
+	function cleanup() {
+		console.log('Model: Cleaning up resources');
+		try {
+			if (model) {
+				if (model.scene) {
+					model.scene.traverse((child) => {
+						if (child.geometry) {
+							child.geometry.dispose();
+						}
+						if (child.material) {
+							child.material.dispose();
+						}
+					});
 				}
-				if (child.material) {
-					if (Array.isArray(child.material)) {
-						child.material.forEach((material) => material.dispose());
-					} else {
-						child.material.dispose();
-					}
-				}
-			});
+				model = null;
+			}
+			isLoading = true;
+			modelReady = false;
+		} catch (error) {
+			console.error('Model: Error during cleanup:', error);
 		}
-		logStore.addLog('Model resources cleaned up');
 	}
 
-	onDestroy(cleanupModel);
+	onMount(() => {
+		console.log('Model: Component mounted');
+		mounted = true;
+	});
+
+	const unsubTransform = modelTransform.subscribe((transform) => {
+		if (!mounted) return;
+
+		console.log('Model: Scene transform updated', transform);
+		try {
+			if (transform && transform.url) {
+				if (currentLoadingUrl !== transform.url) {
+					cleanup();
+					currentLoadingUrl = transform.url;
+					isLoading = true;
+					loadModel(transform.url);
+				}
+			} else {
+				cleanup();
+				currentLoadingUrl = null;
+			}
+		} catch (error) {
+			console.error('Model: Error handling transform update:', error);
+			handleError(error);
+		}
+	});
+
+	async function loadModel(url) {
+		console.log('Model: Starting model load:', url);
+		try {
+			const processedModel = await modelProcessor.processModel(url, {
+				targetSize: 10,
+				center: true
+			});
+
+			if (!mounted) {
+				console.log('Model: Component unmounted during load, aborting');
+				return;
+			}
+
+			if (!processedModel || !processedModel.scene) {
+				throw new Error('Invalid processed model data');
+			}
+
+			model = processedModel;
+
+			if ($modelTransform.scale) {
+				model.scene.scale.set($modelTransform.scale, $modelTransform.scale, $modelTransform.scale);
+			}
+
+			isLoading = false;
+			modelReady = true;
+			console.log('Model: load completed successfully');
+
+			dispatch('load', {
+				model,
+				scene: model.scene
+			});
+			screenActions.setModelLoadState(true);
+		} catch (error) {
+			console.error('Model: Error loading model:', error);
+			handleError(error);
+		}
+	}
+
+	function handleError(error) {
+		console.error('Model: Error occurred:', error);
+		cleanup();
+		currentLoadingUrl = null;
+		dispatch('error', error);
+		screenActions.setModelLoadState(false);
+	}
+
+	onDestroy(() => {
+		console.log('Model: Component destroying');
+		mounted = false;
+		cleanup();
+		if (unsubTransform) {
+			unsubTransform();
+		}
+	});
+
+	$: if (model && model.scene) {
+		model.scene.updateMatrixWorld(true);
+	}
 </script>
 
-<T.Group 
-	bind:ref={modelRef} 
-	dispose={false} 
-	{...$$restProps}
-	on:create
->
-	{#if $modelTransform.url}
-		<GLTF 
-			url={$modelTransform.url}
-			on:error={handleError}
-			on:loaded={handleLoaded}
-		/>
-	{/if}
-</T.Group>
+{#if model && !isLoading && mounted && modelReady}
+	<T.Group>
+		<T is={model.scene} />
+	</T.Group>
+{/if}
