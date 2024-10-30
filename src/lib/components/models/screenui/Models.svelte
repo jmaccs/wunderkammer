@@ -2,7 +2,7 @@
 	import { Box, useReflow, useDimensions } from '@threlte/flex';
 	import { getAllModels } from '../../utils/api.js';
 	import { onMount } from 'svelte';
-	import { modelActions, modelList as modelListStore } from '../../utils/stores.js';
+	import { modelListActions, modelList as modelListStore } from '../../utils/stores.js';
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
 	import Label from './Label.svelte';
@@ -28,7 +28,7 @@
 		isLoading = true;
 		try {
 			const res = await getAllModels();
-			modelActions.setModelList(res);
+			modelListActions.setModelList(res);
 		} catch (error) {
 			console.error('Failed to load models:', error);
 		} finally {

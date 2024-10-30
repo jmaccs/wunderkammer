@@ -21,13 +21,14 @@
 	import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry';
 	import {
 		screenActions,
-		modelActions,
+		modelListActions,
 		screenState,
 		desktop,
 		wunderkammerRef,
 		modelTransform,
 		cameraControls,
 		activeScene,
+		sceneActions,
 		room,
 		logStore
 	} from './utils/stores.js';
@@ -47,7 +48,8 @@
 	let showUi = false;
 	let currentScreen;
 	let doorsOpen;
-	let modelRef;
+	let boundingBox;
+	let center;
 	let view;
 	export let innerWidth;
 	export let innerHeight;
@@ -91,7 +93,7 @@
 		if (!showUi) {
 			screenActions.toggleScreen(true);
 			screenActions.setPage('menu');
-			modelActions.setSelectedModel(null);
+			modelListActions.setSelectedModel(null);
 			screenActions.setModelLoadState(false);
 		}
 	}
@@ -100,6 +102,7 @@
 		async () => {
 			await tick();
 			renderer.render(scene, camera.current);
+
 			rotation += tick;
 		},
 		{ stage: renderStage }
@@ -140,6 +143,7 @@
 			fadeDistance={25}
 			cellSize={2}
 		/>
+		<T.AxesHelper scale={100} position.y={5} />
 
 		<Room rotation.y={-2} in={fade} out={fade} />
 		<Upright />
@@ -166,7 +170,6 @@
 
 		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
 	</T.Group>
-
 	<Wunderkammer
 		position={[-15, 0, -35]}
 		rotation.y={-0.4}
@@ -186,9 +189,14 @@
 		on:pointerenter={onPointerEnter}
 		on:pointerleave={onPointerLeave}
 	/>
-	{#if $modelTransform.url}
-		<Model />
-	{/if}
+
+	<Align auto x={-5} y={3} z={-7}>
+		{#if $modelTransform.url}
+	
+				<Model scale={$modelTransform.scale} />
+		
+		{/if}
+	</Align>
 
 	<Stars speed={3} count={10000} />
 {/if}

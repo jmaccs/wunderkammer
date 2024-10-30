@@ -1,8 +1,9 @@
 <script>
-	import { T } from '@threlte/core';
+	import { T, forwardEventHandlers } from '@threlte/core';
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { modelTransform, screenActions } from '../utils/stores';
 	import { modelProcessor } from '../utils/modelUtils';
+
 	import * as THREE from 'three';
 
 	let model = null;
@@ -11,7 +12,7 @@
 	let mounted = false;
 	let modelReady = false;
 	const dispatch = createEventDispatcher();
-
+	const component = forwardEventHandlers();
 	function cleanup() {
 		console.log('Model: Cleaning up resources');
 		try {
@@ -81,9 +82,9 @@
 
 			model = processedModel;
 
-			if ($modelTransform.scale) {
-				model.scene.scale.set($modelTransform.scale, $modelTransform.scale, $modelTransform.scale);
-			}
+			// if ($modelTransform.scale) {
+			// 	model.scene.scale.set($modelTransform.scale, $modelTransform.scale, $modelTransform.scale);
+			// }
 
 			isLoading = false;
 			modelReady = true;
@@ -119,11 +120,12 @@
 
 	$: if (model && model.scene) {
 		model.scene.updateMatrixWorld(true);
+		console.log(model.scene.position);
 	}
 </script>
 
 {#if model && !isLoading && mounted && modelReady}
-	<T.Group>
-		<T is={model.scene} />
-	</T.Group>
+	
+		<T.Mesh is={model.scene} bind:this={$component} {...$$restProps} />
+
 {/if}

@@ -5,7 +5,7 @@
 	import { spring } from 'svelte/motion';
 	import { onDestroy, createEventDispatcher, onMount } from 'svelte';
 	import { useReflow, Box } from '@threlte/flex';
-	import { modelActions } from '../../utils/stores';
+	import { modelListActions } from '../../utils/stores';
 	import Label from './Label.svelte';
 
 	const component = forwardEventHandlers();

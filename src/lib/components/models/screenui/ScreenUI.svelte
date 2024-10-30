@@ -19,7 +19,7 @@
 	import { get } from 'svelte/store';
 
 	import {
-		modelActions,
+		modelListActions,
 		screenActions,
 		screenState,
 		activeScene,
@@ -60,7 +60,7 @@
 
 	async function handleModel(event) {
 		const uid = event.detail.value;
-		await modelActions.setSelectedModel(uid);
+		await modelListActions.setSelectedModel(uid);
 		const data = await getModelData(uid);
 		console.log(data);
 		screenActions.setPage('model-page');
@@ -88,7 +88,7 @@
 
 	async function handleLoadTransition() {
 		
-		modelActions.setModelUrl(null);
+		modelListActions.setModelUrl(null);
 		screenActions.setModelLoadState(false);
 
 		
@@ -97,7 +97,7 @@
 			screenActions.toggleScreen(false);
 		
 			await tick();
-			modelActions.setModelUrl(url);
+			modelListActions.setModelUrl(url);
 			screenActions.setModelLoadState(true);
 		}
 	}
@@ -124,7 +124,7 @@
 
 	function handleBack() {
 		screenActions.setPage('models');
-		modelActions.setSelectedModel(null);
+		modelListActions.setSelectedModel(null);
 		lever = false;
 	}
 
@@ -140,7 +140,7 @@
 	});
 
 	onDestroy(() => {
-		modelActions.setModelList([]);
+		modelListActions.setModelList([]);
 		screenActions.reset();
 	});
 

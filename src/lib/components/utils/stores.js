@@ -50,7 +50,7 @@ export const activeScene = derived(
 	}
 );
 
-export const modelActions = {
+export const modelListActions = {
 	setModelList(models) {
 		modelList.set(models ?? []);
 	},
