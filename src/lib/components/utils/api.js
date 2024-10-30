@@ -1,6 +1,8 @@
 const API_KEY = import.meta.env.VITE_SKETCHFAB_API_KEY;
 export const sketchfabProviders = ['britishmuseum', 'LapworthMuseum', 'ethlibrary'];
-
+// function contains1kTexture(array, key, value) {
+// 	return array.some((obj) => obj[key] === value);
+// }
 export async function fetchModels(model) {
 	const response = await fetch(`https://api.sketchfab.com/v3/models/${model}/download`, {
 		headers: {
@@ -10,6 +12,7 @@ export async function fetchModels(model) {
 	if (response.ok) {
 		const data = await response.json();
 		const selectedModelUrl = data.glb.url;
+
 		return selectedModelUrl;
 	} else {
 		console.error('Error fetching models from Sketchfab:', response.status);
@@ -23,7 +26,7 @@ export async function getModelData(model) {
 	});
 	if (response.ok) {
 		const data = await response.json();
-
+	
 		return data;
 	} else {
 		console.error('Error fetching model data from Sketchfab:', response.status);
@@ -53,7 +56,7 @@ export async function getAllModels() {
 }
 
 export async function getProviderModels(provider, cursor = null, allModels = []) {
-	const baseUrl = `https://api.sketchfab.com/v3/models?user=${provider}&downloadable=true&animated=false&has_sound=false&archives_flavours=false`;
+	const baseUrl = `https://api.sketchfab.com/v3/models?user=${provider}&downloadable=true&animated=false&has_sound=false&archives_flavours=true`;
 	const url = cursor ? `${baseUrl}&cursor=${cursor}` : baseUrl;
 
 	try {
@@ -70,6 +73,11 @@ export async function getProviderModels(provider, cursor = null, allModels = [])
 		const res = await response.json();
 		const currentModels = res.results;
 		const processedModels = currentModels.map((model) => {
+			// const isLowRes = contains1kTexture(model.archives.glb, 'textureMaxResolution', 1024);
+			// if (!isLowRes) {
+			// 	return null;
+			// }
+
 			const thumbnail = model.thumbnails?.images?.find(
 				(image) => image.width >= 150 && image.width < 500
 			);
@@ -80,6 +88,7 @@ export async function getProviderModels(provider, cursor = null, allModels = [])
 				owner: model.user?.displayName,
 				description: model.description,
 				uid: model.uid,
+				license: model.license,
 				categories: model.categories
 					? model.categories.map((category) => category.name)
 					: 'No categories found',

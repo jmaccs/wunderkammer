@@ -89,15 +89,17 @@
 
 		{#if $hovering && description}
 			<HTML in={scaleTransition} out={scaleTransition}>
-				<div class="absolute h-auto w-auto max-w-screen opacity-80 text-wrap">
+				<div class="relative max-w-screen opacity-80">
 					<div
-						class="bg-gray-50 p-10 border-black border-2 rounded-md !aspect-video max-w-full max-h-full divide-y divide-current"
+						class="absolute left-0 top-0 w-[400px] h-[400px] bg-gray-50 border-black border-2 rounded-md overflow-hidden"
 					>
-						<div>
-							<h1 class="text-gray-800 text-center text-sm mb-2">{description}</h1>
-						</div>
-						<div class="p-4">
-							<p>{title}</p>
+						<div class="h-full flex flex-col justify-evenly p-6">
+							<div>
+								<h1 class="text-gray-800 text-center text-sm">{description}</h1>
+							</div>
+							<div>
+								<p class="text-center">{title}</p>
+							</div>
 						</div>
 					</div>
 				</div>

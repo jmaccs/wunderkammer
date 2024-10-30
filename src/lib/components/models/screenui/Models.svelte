@@ -6,7 +6,7 @@
 	import Results from './Results.svelte';
 	import Button from './Button.svelte';
 	import Label from './Label.svelte';
-	
+
 	let isLoading = true;
 	export let rows = 3;
 	export let columns = 3;
@@ -60,9 +60,9 @@
 						{#if currentPage[index]}
 							{@const model = currentPage[index]}
 							{@const url = model.thumbnail}
-							{@const title = model.title +" | " + model.owner}
-							{@const description = model.description || null}
-							
+							{@const title = model.title + ' | ' + model.owner}
+							{@const description = model.description + ' | ' + model.license.label || null}
+
 							{@const id = model.uid}
 							{@const thumbZoom = 0.7}
 
