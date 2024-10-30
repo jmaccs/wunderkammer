@@ -192,7 +192,7 @@
 	/>
 
 	{#if $modelTransform.url}
-		<Model position={[-20, 8, -30]} />
+		<Model position={[-20, 8, -30]} rotation.y={rotation}/>
 	{/if}
 </T.Group>
 	<Stars speed={3} count={10000} />

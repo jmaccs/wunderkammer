@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { SimplifyModifier } from 'three/examples/jsm/modifiers/SimplifyModifier.js';
 import { logStore } from './stores';
 
 export class ModelProcessor {
 	constructor() {
 		this.loader = new GLTFLoader();
 		this.cache = new Map();
+		this.simplifyModifier = new SimplifyModifier();
 
 		console.log('ModelProcessor initialized');
 		logStore.addLog('ModelProcessor initialized');
@@ -21,7 +23,18 @@ export class ModelProcessor {
 		console.log(`ModelProcessor: Processing model from ${truncatedUrl}`);
 		logStore.addLog(`ModelProcessor: Processing model from ${truncatedUrl}`);
 
-		const { targetSize = 10, center = true } = options;
+		const { 
+			targetSize = 10, 
+			center = true, 
+			simplifyRatio = 0.5 // New option for controlling simplification
+		} = options;
+
+		if (simplifyRatio < 0 || simplifyRatio > 1) {
+			const error = 'ModelProcessor: simplifyRatio must be between 0 and 1';
+			console.error(error);
+			logStore.addError(error);
+			throw new Error(error);
+		}
 
 		try {
 			if (this.cache.has(url)) {
@@ -40,7 +53,10 @@ export class ModelProcessor {
 
 			const processedModel = this.normalizeModel(gltf, { targetSize, center });
 
-			// Ensure materials are properly set up
+			
+			await this.simplifyModel(processedModel.scene, simplifyRatio);
+
+		
 			this.traverseMeshes(processedModel.scene, (mesh) => {
 				mesh.castShadow = true;
 				mesh.receiveShadow = true;
@@ -54,6 +70,102 @@ export class ModelProcessor {
 		} catch (error) {
 			console.error('ModelProcessor: Error processing model:', error);
 			logStore.addError('ModelProcessor: Error processing model:', error);
+			throw error;
+		}
+	}
+
+	async simplifyModel(scene, ratio) {
+		console.log(`ModelProcessor: Starting model simplification with ratio ${ratio}`);
+		logStore.addLog(`ModelProcessor: Starting model simplification with ratio ${ratio}`);
+
+		let totalOriginalVertices = 0;
+		let totalSimplifiedVertices = 0;
+		let meshCount = 0;
+		let errorCount = 0;
+
+		try {
+			await new Promise((resolve) => {
+				this.traverseMeshes(scene, (mesh) => {
+					try {
+						meshCount++;
+						const geometry = mesh.geometry;
+						
+						if (!(geometry instanceof THREE.BufferGeometry)) {
+							console.warn(`ModelProcessor: Skipping non-BufferGeometry mesh: ${mesh.name || 'unnamed'}`);
+							logStore.addLog(`ModelProcessor: Skipping non-BufferGeometry mesh: ${mesh.name || 'unnamed'}`);
+							return;
+						}
+
+						const vertexCount = geometry.attributes.position.count;
+						totalOriginalVertices += vertexCount;
+
+					
+						if (vertexCount < 10) {
+							console.log(`ModelProcessor: Skipping mesh with only ${vertexCount} vertices: ${mesh.name || 'unnamed'}`);
+							logStore.addLog(`ModelProcessor: Skipping mesh with only ${vertexCount} vertices: ${mesh.name || 'unnamed'}`);
+							totalSimplifiedVertices += vertexCount;
+							return;
+						}
+
+						const targetCount = Math.floor(vertexCount * ratio);
+						console.log(`ModelProcessor: Simplifying mesh "${mesh.name || 'unnamed'}" from ${vertexCount} to ${targetCount} vertices`);
+						logStore.addLog(`ModelProcessor: Simplifying mesh "${mesh.name || 'unnamed'}" from ${vertexCount} to ${targetCount} vertices`);
+
+						
+						const startTime = performance.now();
+
+					
+						const simplifiedGeometry = geometry.clone();
+						
+					
+						if (simplifiedGeometry.index !== null) {
+							console.log(`ModelProcessor: Converting indexed geometry to non-indexed for mesh: ${mesh.name || 'unnamed'}`);
+							logStore.addLog(`ModelProcessor: Converting indexed geometry to non-indexed for mesh: ${mesh.name || 'unnamed'}`);
+							simplifiedGeometry.toNonIndexed();
+						}
+
+						const simplified = this.simplifyModifier.modify(simplifiedGeometry, Math.max(0, vertexCount - targetCount));
+						
+						const endTime = performance.now();
+						const processingTime = (endTime - startTime).toFixed(2);
+						
+						console.log(`ModelProcessor: Mesh "${mesh.name || 'unnamed'}" simplified in ${processingTime}ms`);
+						logStore.addLog(`ModelProcessor: Mesh "${mesh.name || 'unnamed'}" simplified in ${processingTime}ms`);
+
+						mesh.geometry.dispose(); 
+						mesh.geometry = simplified;
+
+						totalSimplifiedVertices += simplified.attributes.position.count;
+
+					} catch (error) {
+						errorCount++;
+						console.error(`ModelProcessor: Error simplifying mesh "${mesh.name || 'unnamed'}":`, error);
+						logStore.addError(`ModelProcessor: Error simplifying mesh "${mesh.name || 'unnamed'}": ${error.message}`);
+					}
+				});
+
+			
+				const reductionPercent = ((1 - (totalSimplifiedVertices / totalOriginalVertices)) * 100).toFixed(2);
+				const summary = `ModelProcessor: Simplification complete - 
+					Processed ${meshCount} meshes with ${errorCount} errors.
+					Total vertices reduced from ${totalOriginalVertices} to ${totalSimplifiedVertices} 
+					(${reductionPercent}% reduction)`;
+				
+				console.log(summary);
+				logStore.addLog(summary);
+
+				if (errorCount > 0) {
+					const errorSummary = `ModelProcessor: Completed with ${errorCount} errors during simplification`;
+					console.warn(errorSummary);
+					logStore.addError(errorSummary);
+				}
+
+				resolve();
+			});
+		} catch (error) {
+			const errorMessage = 'ModelProcessor: Critical error during simplification process';
+			console.error(errorMessage, error);
+			logStore.addError(`${errorMessage}: ${error.message}`);
 			throw error;
 		}
 	}
@@ -96,7 +208,7 @@ export class ModelProcessor {
 		try {
 			const scene = gltf.scene;
 
-			// Reset transformations
+		
 			scene.position.set(0, 0, 0);
 			scene.rotation.set(0, 0, 0);
 			scene.scale.set(1, 1, 1);
@@ -112,7 +224,6 @@ export class ModelProcessor {
 				return gltf;
 			}
 
-			
 			const scale = targetSize / maxDimension;
 			scene.scale.set(scale, scale, scale);
 
@@ -121,11 +232,9 @@ export class ModelProcessor {
 				scene.position.copy(center).multiplyScalar(-scale);
 			}
 
-			
 			scene.updateMatrix();
 			scene.updateMatrixWorld(true);
 
-	
 			box.setFromObject(scene);
 
 			gltf.userData = {
