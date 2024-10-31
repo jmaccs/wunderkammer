@@ -32,8 +32,10 @@
 		room,
 		logStore
 	} from './utils/stores.js';
+	import ModelTransformed from './models/ModelTransformed.svelte';
 	import Desktop from './models/Desktop.svelte';
 	import Model from './models/Model.svelte';
+	import Plane from './models/screenui/Plane.svelte';
 	import Burner from './models/Burner.svelte';
 	import Room from './models/Room.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
@@ -143,7 +145,7 @@
 			fadeDistance={25}
 			cellSize={2}
 		/>
-		<T.AxesHelper scale={100} position.y={5} />
+	
 
 		<Room rotation.y={-2} in={fade} out={fade} />
 		<Upright />
@@ -171,6 +173,7 @@
 		<Burner position={[15, 0, -20]} scale={4} rotation.y={-0.5} />
 	</T.Group>
 	<T.Group >
+
 	<Wunderkammer
 		position={[-15, 0, -35]}
 		rotation.y={-0.4}
@@ -192,7 +195,8 @@
 	/>
 
 	{#if $modelTransform.url}
-		<Model position={[-20, 8, -30]} rotation.y={rotation}/>
+		<!-- <Model position={[-20, 8, -30]} rotation.y={rotation}/>		  -->
+		 <ModelTransformed position={[-20, 8, -30]} url={$modelTransform.url}/>
 	{/if}
 </T.Group>
 	<Stars speed={3} count={10000} />

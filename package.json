@@ -31,7 +31,9 @@
 	},
 	"type": "module",
 	"dependencies": {
-
+		"@gltf-transform/core": "^4.0.10",
+		"@gltf-transform/extensions": "^4.0.10",
+		"@gltf-transform/functions": "^4.0.10",
 		"@threlte/core": "^7.3.1",
 		"@threlte/extras": "^8.11.5",
 		"@threlte/flex": "^1.0.3",

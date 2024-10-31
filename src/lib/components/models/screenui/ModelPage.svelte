@@ -5,6 +5,7 @@
 	import { T, forwardEventHandlers } from '@threlte/core';
 	import { selectedModel } from '../../utils/stores';
 	import { cubicIn, cubicOut } from 'svelte/easing';
+	import Plane from './Plane.svelte';
 	import { spring } from 'svelte/motion';
 	import { Group } from 'three';
 	import Button from './Button.svelte';
@@ -17,9 +18,11 @@
 	$: saturation = $hovering ? 1 : 0;
 	export const ref = new Group();
 	const animDelay = 10;
-
+	let preview = false;
 	const component = forwardEventHandlers();
-
+	function loadPreviewViewer() {
+		preview = true
+	}
 	const scaleTransition = createTransition((ref, { direction }) => ({
 		tick(t) {
 			ref.scale.setScalar(t);
@@ -53,7 +56,9 @@
 					on:pointerleave={onPointerLeave}
 					on:click={() => dispatch('model')}
 				>
+			
 					<T.PlaneGeometry args={[80, 80, 2]} />
+					{#if !preview}
 					<ImageMaterial
 						url={$selectedModel.image}
 						radius={0.1}
@@ -61,6 +66,9 @@
 						{saturation}
 						class="relative"
 					/>
+					{:else}
+					<Plane uid={$selectedModel.uid} {width} {height}  />
+					{/if}
 				</T.Mesh>
 			</T.Group>
 		</Box>
@@ -80,9 +88,9 @@
 					<Button
 						class="h-full w-auto flex-1 text-sm"
 						z={20}
-						text="LOAD MODEL"
+						text="PREVIEW MODEL"
 						order={999}
-						on:click={() => dispatch('model')}
+						on:click={loadPreviewViewer}
 					/>
 				</Box>
 					
