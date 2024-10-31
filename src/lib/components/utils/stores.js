@@ -25,8 +25,8 @@ const initialScreenState = {
 	screenSize: {
 		innerWidth: 2000,
 		innerHeight: 2000
-	},
-	doorsOpen: false
+	}
+
 };
 export const cameraValues = writable({
 	position: [-15, 6, 10],
@@ -166,3 +166,21 @@ export const cameraControls = writable(undefined);
 export const desktop = writable(undefined);
 export const room = writable(undefined);
 export const wunderkammerRef = writable(undefined);
+
+const initialPropValues = {
+	wunderkammer: {
+		doorsOpen: false
+	}
+}
+
+export const propValues = writable(initialPropValues)
+
+export function propActions(prop, key, value) {
+	propValues.update(propValues => ({
+		...propValues,
+		[prop]: {
+			...propValues[prop],
+			[key]: value
+		}
+	}))
+}

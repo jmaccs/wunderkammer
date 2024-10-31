@@ -7,7 +7,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	import * as THREE from 'three';
 	import { T, forwardEventHandlers } from '@threlte/core';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	import { wunderkammerRef, screenActions, screenState } from '../utils/stores.js';
+	import { wunderkammerRef, screenActions, propValues, propActions } from '../utils/stores.js';
 	import {
 		useGltf,
 		useGltfAnimations,
@@ -24,7 +24,7 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 	const gltf = suspend(useGltf('/models/cabinet-transformed.glb', { useDraco: true }));
 	export const { actions, mixer } = useGltfAnimations(gltf, ref);
 
-	$: doorsOpen = $screenState.doorsOpen;
+	$: doorsOpen = $propValues.wunderkammer.doorsOpen;
 	export const triggerAnimation = () => {
 		const cabinetActionL = $actions['Open Left'];
 		const cabinetActionR = $actions['Open Right'];
@@ -33,12 +33,12 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 			cabinetActionR.loop = THREE.LoopOnce;
 			cabinetActionL.clampWhenFinished = true;
 			cabinetActionR.clampWhenFinished = true;
-			if (!doorsOpen) {
-				screenActions.setDoors(true);
+			if (doorsOpen) {
+				propActions('wunderkammer', 'doorsOpen', true);
 				cabinetActionL.timeScale = -cabinetActionL.timeScale;
 				cabinetActionR.timeScale = -cabinetActionR.timeScale;
-			} else if (doorsOpen) {
-				screenActions.setDoors(false);
+			} else if (!doorsOpen) {
+				propActions('wunderkammer', 'doorsOpen', false);
 				cabinetActionL.timeScale = cabinetActionL.timeScale;
 				cabinetActionR.timeScale = cabinetActionR.timeScale;
 			}
@@ -62,12 +62,16 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 			name="Cabinet_Baked"
 			geometry={gltf.nodes.Cabinet_Baked.geometry}
 			material={gltf.materials.Cabinet_Baked}
+			castShadow
+			receiveShadow
 		/>
 		<T.Mesh
 			name="Door_L_Baked"
 			geometry={gltf.nodes.Door_L_Baked.geometry}
 			material={gltf.materials['Door L_Baked']}
 			position={[-9.36, 18.45, 13.7]}
+			castShadow
+			receiveShadow
 			on:pointerenter={onPointerEnter}
 			on:pointerleave={onPointerLeave}
 		/>
@@ -76,6 +80,8 @@ Command: npx @threlte/gltf@2.0.3 /Users/joemccarney/Documents/img/blender/wunder
 			geometry={gltf.nodes.Door_R_Baked.geometry}
 			material={gltf.materials['Door R_Baked']}
 			position={[8.89, 18.24, 14.07]}
+			castShadow
+			receiveShadow
 			on:pointerenter={onPointerEnter}
 			on:pointerleave={onPointerLeave}
 		/>

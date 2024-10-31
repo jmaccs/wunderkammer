@@ -26,6 +26,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Room.glb -s -T -k
       geometry={gltf.nodes.Cube_Baked.geometry}
       material={gltf.materials['Cube_Baked.002']}
       position={[-5.27, 1.1, 12.68]}
+      
     />
     <T.Mesh
       name="Frame_Baked"
@@ -36,6 +37,7 @@ Command: npx @threlte/gltf@2.0.3 static/models/Room.glb -s -T -k
       position={[7.37, 25.26, -17.72]}
       rotation={[0, Math.PI / 2, 0]}
       scale={6.03}
+      
     />
     <T.Mesh
       name="Pane_Baked"

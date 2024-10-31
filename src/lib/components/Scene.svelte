@@ -29,13 +29,13 @@
 		cameraControls,
 		activeScene,
 		sceneActions,
-		room,
+		propValues,
 		logStore
 	} from './utils/stores.js';
 	import ModelTransformed from './models/ModelTransformed.svelte';
 	import Desktop from './models/Desktop.svelte';
-	import Model from './models/Model.svelte';
-	import Plane from './models/screenui/Plane.svelte';
+
+
 	import Burner from './models/Burner.svelte';
 	import Room from './models/Room.svelte';
 	import ScreenUi from './models/screenui/ScreenUI.svelte';
@@ -65,7 +65,7 @@
 		showUi = $screenState.isOpen;
 		currentScreen = $screenState.currentPage;
 		showModel = $screenState.isModelLoaded;
-		doorsOpen = $screenState.doorsOpen;
+
 
 		if ($cameraControls) {
 			if (showUi) {
@@ -78,6 +78,13 @@
 	});
 
 	const unsubCamera = cameraControls.subscribe(() => {});
+	const unsubProps = propValues.subscribe(($propValues) => {
+		doorsOpen = $propValues.wunderkammer.doorsOpen;
+	});
+	function handleWunderkammerClick(){
+		if (!$wunderkammerRef) return
+
+	}
 
 	const fade = createTransition((ref) => {
 		if (!ref.transparent) ref.transparent = true;
@@ -113,6 +120,7 @@
 	onDestroy(() => {
 		unsubScreen();
 		unsubCamera();
+		unsubProps();
 	});
 </script>
 
